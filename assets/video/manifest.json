@@ -1,0 +1,173 @@
+{
+  "glass": {
+    "src": "assets/video/glass-day.mp4",
+    "poster": "assets/video/glass-day.webp",
+    "duration": 5.041667,
+    "model": "Kling 3.0",
+    "status": "provisional",
+    "source_slide": 19,
+    "review": "Two visitors point and look down; stable glass grid and models below. Improved photographic materials versus prior Seedance; mild drift and generated fine details remain provisional."
+  },
+  "table": {
+    "src": "assets/video/table-day.mp4",
+    "poster": "assets/video/table-day.webp",
+    "duration": 5.041667,
+    "model": "Kling 3.0",
+    "status": "provisional",
+    "source_slide": 17,
+    "review": "Visible leaning, pointing and visitor approach; stable model-table architecture in sampled sequence. Photographic concept quality; generated fine text and hand detail remain provisional."
+  },
+  "shelf": {
+    "src": "assets/video/shelf-day.mp4",
+    "poster": "assets/video/shelf-day.webp",
+    "duration": 5.041667,
+    "model": "Kling 3.0",
+    "status": "provisional",
+    "source_slide": 21,
+    "review": "Visitor takes a short walk along shelves and pauses; far pair gesture subtly. Stable architecture in sampled sequence; slight camera retreat, idealized AI concept materials and fine detail."
+  },
+  "wall": {
+    "src": "assets/video/wall-day.mp4",
+    "poster": "assets/video/wall-day.webp",
+    "duration": 5.041667,
+    "model": "Kling 3.0",
+    "status": "provisional",
+    "source_slide": 23,
+    "review": "Visitor leans toward models; pair gesture and walk along corridor. Column and main architecture retained; mild reframing, generated text and fine details remain provisional."
+  },
+  "sequences": {
+    "experience": [
+      {
+        "src": "assets/video/table-day.mp4",
+        "poster": "assets/video/table-day.webp",
+        "duration": 5.041667,
+        "model": "Kling 3.0",
+        "status": "provisional",
+        "source_slide": 17,
+        "review": "Visible leaning, pointing and visitor approach; stable model-table architecture in sampled sequence. Photographic concept quality; generated fine text and hand detail remain provisional.",
+        "id": "table-original",
+        "option": "table",
+        "label": "Model table / Gather around the work",
+        "sha256": "ea609a445d9be403343d6a85d1e631e16cbf5b14863e96188023a4550900db9e"
+      },
+      {
+        "src": "assets/video/glass-day.mp4",
+        "poster": "assets/video/glass-day.webp",
+        "duration": 5.041667,
+        "model": "Kling 3.0",
+        "status": "provisional",
+        "source_slide": 19,
+        "review": "Two visitors point and look down; stable glass grid and models below. Improved photographic materials versus prior Seedance; mild drift and generated fine details remain provisional.",
+        "id": "glass-original",
+        "option": "glass",
+        "label": "Glass floor / A new perspective",
+        "sha256": "91198aeb90800d6f905d55364ba31f1d85448f663eab9afcb385374e692db29a"
+      },
+      {
+        "id": "glass-walk",
+        "option": "glass",
+        "label": "Glass floor / Walk above the models",
+        "src": "assets/video/glass-walk.mp4",
+        "poster": "assets/video/glass-walk.webp",
+        "duration": 5.041667,
+        "width": 1920,
+        "height": 1080,
+        "model": "Kling 3.0 Pro",
+        "status": "provisional",
+        "source_slide": 19,
+        "sha256": "93940aff5945e40be64fb87c064331fc4cef9ce50a4184ed4ac0ed313a13faed",
+        "review": "Two visitors walk across the glass, pause and look down; visible lateral camera travel. Major room anchors remain recognizable. Generated screen lettering and small exhibit detail remain illustrative."
+      }
+    ],
+    "prefunction": [
+      {
+        "src": "assets/video/shelf-day.mp4",
+        "poster": "assets/video/shelf-day.webp",
+        "duration": 5.041667,
+        "model": "Kling 3.0",
+        "status": "provisional",
+        "source_slide": 21,
+        "review": "Visitor takes a short walk along shelves and pauses; far pair gesture subtly. Stable architecture in sampled sequence; slight camera retreat, idealized AI concept materials and fine detail.",
+        "id": "shelf-original",
+        "option": "shelf",
+        "label": "Shelves + table / Pause and look",
+        "sha256": "88a8622b313a077ea5be21797dba91ef3cf9d89f78045d33f34b22ce4a26827d"
+      },
+      {
+        "id": "shelf-walk",
+        "option": "shelf",
+        "label": "Shelves + table / Walk and discover",
+        "src": "assets/video/shelf-walk.mp4",
+        "poster": "assets/video/shelf-walk.webp",
+        "duration": 5.041667,
+        "width": 1920,
+        "height": 1080,
+        "model": "Kling 3.0 Pro",
+        "status": "provisional",
+        "source_slide": 21,
+        "sha256": "23070907d2f25ee9bee99821e3c5d81c7015f04d5c0ae9069be498414dcf274e",
+        "review": "Visitor walks along shelves to the table as camera tracks sideways. Major shelf, table and glazing relationships retained; fine model and hand details remain provisional."
+      },
+      {
+        "id": "shelf-detail",
+        "option": "shelf",
+        "label": "Shelves + table / A closer encounter",
+        "src": "assets/video/shelf-detail.mp4",
+        "poster": "assets/video/shelf-detail.webp",
+        "duration": 5.041667,
+        "width": 1920,
+        "height": 1080,
+        "model": "Kling 3.0 Pro",
+        "status": "provisional",
+        "source_slide": 21,
+        "sha256": "523c24fbb80f58a4f71b66accc6ade43648a970de226600c7ee0c90d4d9b1511",
+        "review": "Slow approach with visitor inspection and head/body movement; architecture stays recognizable. Idealized materials and generated miniature detail remain provisional."
+      }
+    ],
+    "timeline": [
+      {
+        "src": "assets/video/wall-day.mp4",
+        "poster": "assets/video/wall-day.webp",
+        "duration": 5.041667,
+        "model": "Kling 3.0",
+        "status": "provisional",
+        "source_slide": 23,
+        "review": "Visitor leans toward models; pair gesture and walk along corridor. Column and main architecture retained; mild reframing, generated text and fine details remain provisional.",
+        "id": "wall-original",
+        "option": "wall",
+        "label": "Timeline wall / The company story",
+        "sha256": "6fb2df321d5f690f40bd435d18f22ce6a2048d6e302993ccc1d189e296c52111"
+      },
+      {
+        "id": "wall-walk",
+        "option": "wall",
+        "label": "Timeline wall / Walk the story",
+        "src": "assets/video/wall-walk.mp4",
+        "poster": "assets/video/wall-walk.webp",
+        "duration": 5.041667,
+        "width": 1920,
+        "height": 1080,
+        "model": "Kling 3.0 Pro",
+        "status": "provisional",
+        "source_slide": 23,
+        "sha256": "4afcf46b6865d60eca117409456518d9fe6270cc8449cb29a80be9745c705936",
+        "review": "Pair walks beside the island as the camera translates along the timeline. Central column retained. Screen content is illustrative and architectural detail is a concept interpretation."
+      },
+      {
+        "id": "wall-detail",
+        "option": "wall",
+        "label": "Timeline wall / Models and moving image",
+        "src": "assets/video/wall-detail.mp4",
+        "poster": "assets/video/wall-detail.webp",
+        "duration": 5.041667,
+        "width": 1920,
+        "height": 1080,
+        "model": "Kling 3.0 Pro",
+        "status": "provisional",
+        "source_slide": 23,
+        "sha256": "4ed1a9a34a48a386ae71d370e4a0ead27ab41baa00b7ddd4ebdc8ed29d19e1cd",
+        "review": "Visitor lifts gaze from models toward screen; subtle camera approach and independent background gestures. Screen motion and fine exhibit details remain illustrative."
+      }
+    ]
+  }
+}

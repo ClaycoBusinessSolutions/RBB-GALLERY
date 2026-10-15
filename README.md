@@ -11,4 +11,6 @@ This repository serves the reviewed 20-slide static presentation from `main`. Op
 
 Section introductions are labeled as placeholder copy for editorial review. The model-array study is symbolic; final project count, dimensions and venue remain to be confirmed. Spatial concepts are potential opportunities for discussion.
 
+For a local preview, run `python3 launch.py --no-open` and open the loopback URL printed in the terminal.
+
 The meeting recording, transcript, internal review notes and source research are not included in this public build.

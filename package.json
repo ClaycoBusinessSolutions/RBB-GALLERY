@@ -1,1 +1,0 @@
-{"name":"rbb-presentation","version":"0.3.0","private":true,"type":"module","scripts":{"present":"hyperframes present . --port 8773 --no-open","serve":"python3 launch.py --no-open --port 8772","check":"hyperframes check"},"dependencies":{"gsap":"3.14.2","hyperframes":"0.8.159"}}

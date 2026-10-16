@@ -4,7 +4,7 @@ import { mountArcTransition } from './arc-transition.js';
 import { mountMuseumMenu } from './museum-menu.js';
 import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js';
 import { createSeminalProjects } from './seminal-projects.js';
-import { isProjectSequence, createProjectSequence } from './project-sequence.js';
+import { isProjectSequence } from './project-sequence.js';
 import { createHopeGallery } from './hope-gallery.js';
 import { createSpaceOpportunities } from './space-opportunities.js';
 
@@ -41,6 +41,9 @@ function resize() {
  root.style.setProperty('--content-left', `${(width / scale - 1920) / 2}px`);
  root.style.setProperty('--content-top', `${(height / scale - 1080) / 2}px`);
  root.style.setProperty('--bleed-scale', Math.max(width / 1920, height / 1080) / scale);
+ if (!state.transitioning && scenes[state.index]?.classList.contains('active') && !isOverlay()) {
+  seminalProjects.activate(scenes[state.index], { motion: moving() });
+ }
 }
 addEventListener('resize', resize); resize();
 
@@ -74,10 +77,12 @@ function updateChrome() {
   nav.hidden = menuWanted || menuBusy;
   nav.inert = menuWanted || menuBusy;
  }
- museumMenu?.setIndex(state.index);
+ museumMenu?.setIndex(current.dataset.projectContinuation
+  ? scenes.findIndex(scene => scene.dataset.compositionId === current.dataset.projectContinuation)
+  : state.index);
 }
 async function prepareScene(scene) {
- await Promise.all([hopeGallery.prepare(scene), spaceOpportunities.prepare(scene)]);
+ await Promise.all([hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
  if (scene.dataset.compositionId === 'office-art') {
   if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js').then(async ({ mountWavyAccordion }) => {
    const root = scene.querySelector('[data-wavy-accordion-init]');
@@ -115,6 +120,11 @@ function startAmbient(scene) {
  spaceOpportunities.activate(scene, { motion: moving() && state.mode === 'live' });
 }
 function refreshMotion() {
+ if (state.transitioning) {
+  if (!moving()) transition?.progress(1);
+  updateChrome();
+  return;
+ }
  const scene = scenes[state.index];
  stopAmbient(scene); startAmbient(scene); updateChrome(); scheduleAuto();
 }
@@ -149,6 +159,7 @@ async function go(index, { instant = false, seek = false } = {}) {
  const animate = !instant && !reduced.matches && state.motion && state.mode === 'live';
  const mapMorph = spaceOpportunities.beginTransition(from, to, { duration: SCENE_MOTION.duration, motion: animate && hasFrom });
  const useProjectSequence = animate && hasFrom && isProjectSequence(from, to);
+ if (!useProjectSequence) seminalProjects.settle(to);
  const arc = animate && !useProjectSequence ? arcs.begin(to, { direction, curve: 12 }) : null;
  to.classList.add('active'); to.inert = false; to.setAttribute('aria-hidden', 'false');
  from.inert = true; from.style.pointerEvents = 'none';
@@ -157,7 +168,7 @@ async function go(index, { instant = false, seek = false } = {}) {
  gsap.set(to.querySelector('.scene-inner'), { clearProps: 'transform,opacity' });
  if (isCollection(to)) { art?.setActive(moving()); focus.value = 1; art?.setFocus(1); $('#art-field').style.opacity = '1'; }
  const duration = animate ? SCENE_MOTION.duration : 0;
- const projectSequence = useProjectSequence ? createProjectSequence(from, to, { direction }) : null;
+ const projectSequence = useProjectSequence ? seminalProjects.beginTransition(from, to) : null;
  await new Promise(resolve => {
   transition = gsap.timeline({ onComplete: resolve });
   if (mapMorph) transition.add(mapMorph.timeline.paused(false), 0);
@@ -257,8 +268,8 @@ addEventListener('keydown', event => {
   return;
  }
  if (/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName) || event.target.isContentEditable) return;
- if (event.key === 'ArrowRight' || event.key === 'PageDown' || (event.code === 'Space' && !event.target.closest('button,a'))) { event.preventDefault(); stepBy(1); }
- if (event.key === 'ArrowLeft' || event.key === 'PageUp') { event.preventDefault(); stepBy(-1); }
+ if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === 'PageDown' || (event.code === 'Space' && !event.target.closest('button,a'))) { event.preventDefault(); stepBy(1); }
+ if (event.key === 'ArrowLeft' || event.key === 'ArrowUp' || event.key === 'PageUp') { event.preventDefault(); stepBy(-1); }
  if (event.key === 'Home') { event.preventDefault(); go(0); }
  if (event.key === 'End') { event.preventDefault(); go(scenes.length - 1); }
  if (event.key.toLowerCase() === 'f') { event.preventDefault(); if (!event.repeat) fullscreen(); }

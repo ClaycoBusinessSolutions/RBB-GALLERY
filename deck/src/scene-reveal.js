@@ -16,7 +16,9 @@ function elements(scene) {
 
 export function settleSceneReveal(scene) {
   const { heading, labels, visuals, copy, controls } = elements(scene);
-  globalThis.gsap.set([heading, ...labels, ...visuals, ...copy, ...controls].filter(Boolean), {
+  const targets = [heading, ...labels, ...visuals, ...copy, ...controls].filter(Boolean);
+  if (!targets.length) return;
+  globalThis.gsap.set(targets, {
     clearProps: 'opacity,visibility,transform,clipPath'
   });
 }

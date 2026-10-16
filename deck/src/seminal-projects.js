@@ -1,12 +1,12 @@
-/** Source-backed project viewer with the Osmo layered gallery lifecycle. */
-import { mountProjectQueue } from './project-queue.js';
+/** Source-backed details layered over the continuous project stream. */
+import { mountProjectStream } from './project-queue.js';
 const SELECTORS = { button: 'button[data-project-id]' };
 
 export function createSeminalProjects({ onOpen, onClose } = {}) {
   const controller = new AbortController();
   const { signal } = controller;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  const bindings = new Map();
+  let stream;
   let activeScene = null, motion = true, destroyed = false;
   let projectMap = new Map(), loadError = false, returnFocus = null;
   let dialogIds = [], dialogIndex = 0, viewGeneration = 0, currentProject = null;
@@ -128,9 +128,9 @@ export function createSeminalProjects({ onOpen, onClose } = {}) {
   function openProject(button) {
     if (destroyed || !activeScene || !activeScene.contains(button)) return;
     returnFocus = button;
-    dialogIds = bindings.get(activeScene)?.getIds() || [...new Set([...activeScene.querySelectorAll(SELECTORS.button)].map(item => item.dataset.projectId))];
+    dialogIds = stream.getIds();
     const index = dialogIds.indexOf(button.dataset.projectId);
-    for (const binding of bindings.values()) binding.pause();
+    stream?.pause();
     // Open first, so the deck's overlay check sees the modal in onOpen.
     if (!dialog.open) dialog.showModal();
     onOpen?.();
@@ -157,35 +157,32 @@ export function createSeminalProjects({ onOpen, onClose } = {}) {
 
   function pause() {
     activeScene = null;
-    for (const binding of bindings.values()) binding.pause();
-  }
-  function mountScene(scene) {
-    if (!bindings.has(scene)) bindings.set(scene, mountProjectQueue(scene, {
-      getProject: id => projectMap.get(id), ready, onInspect: openProject,
-    }));
-    return bindings.get(scene);
+    stream?.pause();
   }
   function activate(scene, { motion: animate = true } = {}) {
     if (destroyed) return;
     if (!scene?.matches('.seminal-projects')) { pause(); return; }
-    if (activeScene !== scene) for (const binding of bindings.values()) binding.pause();
+    if (activeScene !== scene) stream?.pause();
     activeScene = scene;
     motion = Boolean(animate);
     scene.classList.toggle('seminal-projects--still', !motion || reduced.matches);
-    mountScene(scene).activate({ motion: motion && !reduced.matches });
+    stream.activate(scene);
   }
   // Build before prepareScene/reveal sees the slide, preventing an unstyled-card flash.
-  document.querySelectorAll('.seminal-projects').forEach(mountScene);
+  stream = mountProjectStream([...document.querySelectorAll('.scene')], {
+    getProject: id => projectMap.get(id), ready, onInspect: openProject,
+  });
   reduced.addEventListener('change', () => { if (activeScene) activate(activeScene, { motion }); }, { signal });
   return {
-    activate, pause,
+    activate, pause, prepare: scene => stream.prepare(scene),
+    settle: scene => { if (scene?.matches('.seminal-projects')) { stream.activate(scene); stream.pause(); } },
+    beginTransition: (from, to) => stream.transition(from, to),
     destroy() {
       if (destroyed) return;
       destroyed = true;
       viewGeneration++;
       controller.abort();
-      for (const binding of bindings.values()) binding.destroy();
-      bindings.clear();
+      stream.destroy();
       if (dialog.open) dialog.close();
       dialog.remove();
       projectMap.clear();

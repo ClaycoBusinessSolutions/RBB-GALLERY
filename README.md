@@ -6,8 +6,8 @@ This repository serves the reviewed 20-slide static presentation from `main`. Op
 
 - G: menu
 - F: full screen
-- Arrow keys: previous/next slide (project galleries have their own navigation)
-- Gallery / Matrix: change project view
+- Arrow keys or Previous / Next: advance the presentation
+- Seminal projects: each Next click reveals one market of two or three rows of project cards; click any card for details and official sources
 
 Section introductions are labeled as placeholder copy for editorial review. The model-array study is symbolic; final project count, dimensions and venue remain to be confirmed. Spatial concepts are potential opportunities for discussion.
 

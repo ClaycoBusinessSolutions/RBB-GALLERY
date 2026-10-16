@@ -1,5 +1,5 @@
 /** Source-backed project viewer with the Osmo layered gallery lifecycle. */
-import { mountProjectGallery } from './project-gallery.js';
+import { mountProjectQueue } from './project-queue.js';
 const SELECTORS = { button: 'button[data-project-id]' };
 
 export function createSeminalProjects({ onOpen, onClose } = {}) {
@@ -160,7 +160,7 @@ export function createSeminalProjects({ onOpen, onClose } = {}) {
     for (const binding of bindings.values()) binding.pause();
   }
   function mountScene(scene) {
-    if (!bindings.has(scene)) bindings.set(scene, mountProjectGallery(scene, {
+    if (!bindings.has(scene)) bindings.set(scene, mountProjectQueue(scene, {
       getProject: id => projectMap.get(id), ready, onInspect: openProject,
     }));
     return bindings.get(scene);
@@ -174,7 +174,7 @@ export function createSeminalProjects({ onOpen, onClose } = {}) {
     scene.classList.toggle('seminal-projects--still', !motion || reduced.matches);
     mountScene(scene).activate({ motion: motion && !reduced.matches });
   }
-  // Build before prepareScene/reveal sees the slide, preventing a grid-to-gallery flash.
+  // Build before prepareScene/reveal sees the slide, preventing an unstyled-card flash.
   document.querySelectorAll('.seminal-projects').forEach(mountScene);
   reduced.addEventListener('change', () => { if (activeScene) activate(activeScene, { motion }); }, { signal });
   return {

@@ -4,6 +4,7 @@ import { mountArcTransition } from './arc-transition.js';
 import { mountMuseumMenu } from './museum-menu.js';
 import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js';
 import { createSeminalProjects } from './seminal-projects.js';
+import { isProjectSequence, createProjectSequence } from './project-sequence.js';
 import { createHopeGallery } from './hope-gallery.js';
 import { createSpaceOpportunities } from './space-opportunities.js';
 
@@ -147,7 +148,8 @@ async function go(index, { instant = false, seek = false } = {}) {
  state.index = index; updateChrome();
  const animate = !instant && !reduced.matches && state.motion && state.mode === 'live';
  const mapMorph = spaceOpportunities.beginTransition(from, to, { duration: SCENE_MOTION.duration, motion: animate && hasFrom });
- const arc = animate ? arcs.begin(to, { direction, curve: 12 }) : null;
+ const useProjectSequence = animate && hasFrom && isProjectSequence(from, to);
+ const arc = animate && !useProjectSequence ? arcs.begin(to, { direction, curve: 12 }) : null;
  to.classList.add('active'); to.inert = false; to.setAttribute('aria-hidden', 'false');
  from.inert = true; from.style.pointerEvents = 'none';
  to.style.zIndex = '3'; from.style.zIndex = '2';
@@ -155,9 +157,12 @@ async function go(index, { instant = false, seek = false } = {}) {
  gsap.set(to.querySelector('.scene-inner'), { clearProps: 'transform,opacity' });
  if (isCollection(to)) { art?.setActive(moving()); focus.value = 1; art?.setFocus(1); $('#art-field').style.opacity = '1'; }
  const duration = animate ? SCENE_MOTION.duration : 0;
+ const projectSequence = useProjectSequence ? createProjectSequence(from, to, { direction }) : null;
  await new Promise(resolve => {
   transition = gsap.timeline({ onComplete: resolve });
   if (mapMorph) transition.add(mapMorph.timeline.paused(false), 0);
+  if (projectSequence) transition.add(projectSequence.timeline.paused(false), 0);
+  else {
   addSceneReveal(transition, to, { instant: !duration, direction });
   if (arc) {
    gsap.set(to, { opacity: 1 });
@@ -170,12 +175,13 @@ async function go(index, { instant = false, seek = false } = {}) {
    if (!arc) transition.to(from, { opacity: 0, duration: duration * .9, ease: 'power2.inOut' }, 0);
    transition.to(from.querySelector('.scene-inner'), { opacity: 0, y: -direction * 16, duration: duration ? .32 : 0, ease: 'power2.in' }, 0);
   }
+  }
   if (isCollection(from) || isCollection(to)) {
    transition.to(focus, { value: isCollection(to) ? 0 : 1, duration, ease: 'power3.inOut', onUpdate: () => art?.setFocus(focus.value) }, 0);
   }
   if (!duration) transition.progress(1);
  });
- arc?.dispose(); mapMorph?.finish();
+ arc?.dispose(); mapMorph?.finish(); projectSequence?.finish();
  for (const scene of scenes) {
   const active = scene === to;
   scene.classList.toggle('active', active); scene.inert = !active; scene.setAttribute('aria-hidden', String(!active));

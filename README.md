@@ -7,9 +7,9 @@ This repository serves the reviewed static presentation from `main`. Open the pu
 - G: menu
 - F: full screen
 - Arrow keys or Previous / Next: advance the presentation
-- Seminal projects: Next / Previous and arrow keys move a continuous gallery of project cards. Market headings travel with the images. The industrial gallery smoothly compresses to show all three rows together. Click any card for details and official sources
+- Seminal projects: Next / Previous and arrow keys move a continuous gallery of project cards. Market headings travel with the images. The industrial gallery keeps the same column widths while photo-frame heights and row gaps smoothly compress to show all three rows together. Click any card for details and official sources
 
-Section introductions are labeled as placeholder copy for editorial review. The model-array study is symbolic; final project count, dimensions and venue remain to be confirmed. Spatial concepts are potential opportunities for discussion.
+Section introductions are labeled as placeholder copy for editorial review. Spatial concepts are potential opportunities for discussion.
 
 For a local preview, run `python3 launch.py --no-open` and open the loopback URL printed in the terminal.
 

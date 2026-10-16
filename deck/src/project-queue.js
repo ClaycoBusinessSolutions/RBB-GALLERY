@@ -58,25 +58,38 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
   const positions = new Map();
   const industry = groups.get('projects-industry');
   const industryGrid = industry.querySelector('.project-stream__grid');
-  industryGrid.style.transformOrigin = '50% 0';
-  let currentScale = 1;
+  const industryPhotos = [...industryGrid.querySelectorAll('.project-stream__photo')];
 
   function measure() {
     for (const card of cards) {
       const group = card.closest('.project-stream__market');
       const grid = card.parentElement;
-      positions.set(card, { base: group.offsetTop + grid.offsetTop, row: card.offsetTop, height: card.offsetHeight, industry: group === industry });
+      positions.set(card, { top: group.offsetTop + grid.offsetTop + card.offsetTop, height: card.offsetHeight });
     }
   }
-  function fittedScale(scene) {
-    if (scene?.dataset.compositionId !== 'projects-industry') return 1;
-    // Preserve image proportions and the title size; reserve room for navigation.
+  function layoutFor(scene) {
+    const photoHeight = industryPhotos[0].offsetWidth * .75;
+    const rowGap = parseFloat(getComputedStyle(industryGrid).columnGap);
+    if (scene?.dataset.compositionId !== 'projects-industry') return { photoHeight, rowGap };
+    const rowCaptions = [];
+    [...industryGrid.children].forEach((card, index) => {
+      const row = Math.floor(index / 4);
+      rowCaptions[row] = Math.max(rowCaptions[row] || 0, card.querySelector('.project-stream__caption').offsetHeight);
+    });
+    const rows = rowCaptions.length;
+    const captions = rowCaptions.reduce((sum, height) => sum + height, 0);
     const available = root.clientHeight - 80 - industryGrid.offsetTop - 80;
-    return Math.min(1, Math.max(.1, available / industryGrid.offsetHeight));
+    const naturalHeight = rows * photoHeight + captions + (rows - 1) * rowGap;
+    const fit = Math.min(1, Math.max(.1, available / naturalHeight));
+    const compactGap = rowGap * fit;
+    return {
+      photoHeight: Math.min(photoHeight, Math.max(1, (available - captions - (rows - 1) * compactGap) / rows)),
+      rowGap: compactGap,
+    };
   }
-  function cardBox(card, scale = currentScale) {
-    const box = positions.get(card), factor = box.industry ? scale : 1;
-    return { top: box.base + box.row * factor, height: box.height * factor };
+  function applyLayout(layout) {
+    gsap.set(industryPhotos, { height: layout.photoHeight });
+    gsap.set(industryGrid, { rowGap: layout.rowGap });
   }
   function hydrate() {
     if (destroyed) return;
@@ -104,14 +117,14 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
   function settleVisible(y) {
     const height = root.clientHeight;
     for (const card of cards) {
-      const box = cardBox(card), top = box.top + y;
+      const box = positions.get(card), top = box.top + y;
       if (top < height) { revealed.add(card); gsap.set(card, { autoAlpha: 1, y: 0 }); }
     }
   }
   function accessible(y) {
     const height = root.clientHeight;
     for (const card of cards) {
-      const box = cardBox(card), top = box.top + y;
+      const box = positions.get(card), top = box.top + y;
       const visible = top + box.height > 30 && top < height - 60;
       card.inert = !visible;
       card.tabIndex = visible ? 0 : -1;
@@ -124,10 +137,8 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
   }
   function activate(scene) {
     if (destroyed || !isMarket(scene)) { pause(); return; }
-    activeScene = scene; mount(scene); measure();
+    activeScene = scene; mount(scene); applyLayout(layoutFor(scene)); measure();
     const y = targetY(scene);
-    currentScale = fittedScale(scene);
-    gsap.set(industryGrid, { scale: currentScale });
     gsap.set(track, { y }); settleVisible(y); accessible(y);
     enabled = true; root.inert = false;
   }
@@ -143,20 +154,26 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     const timeline = gsap.timeline({ paused: true });
     const intro = isIntro(from) ? from : isIntro(to) ? to : null;
     const market = isMarket(to) ? to : from;
-    mount(market); measure(); pause();
+    mount(market); pause();
     const viewport = root.clientHeight;
     const entering = isIntro(from), leaving = isIntro(to);
+    const startLayout = layoutFor(from), endLayout = layoutFor(to);
+    applyLayout(startLayout); measure();
+    const startPositions = new Map(positions);
     const start = entering ? viewport : targetY(from);
+    applyLayout(endLayout); measure();
+    const endPositions = new Map(positions);
     const end = leaving ? viewport : targetY(to);
-    const startScale = fittedScale(from), endScale = fittedScale(to);
+    applyLayout(startLayout);
     const duration = 2.15;
     const ease = gsap.parseEase('power2.inOut');
     gsap.set(track, { y: start });
-    gsap.set(industryGrid, { scale: startScale });
     gsap.set([from, to], { opacity: 1 });
     timeline.to(track, { y: end, duration, ease: 'power2.inOut' }, 0);
-    // Compress with the same easing as the upward travel, so rows stay connected.
-    timeline.to(industryGrid, { scale: endScale, duration, ease: 'power2.inOut' }, 0);
+    // Only ten frames change height. Keep columns and text fixed, and crop images
+    // with object-fit rather than distorting them with a non-uniform scale.
+    timeline.to(industryPhotos, { height: endLayout.photoHeight, duration, ease: 'power2.inOut' }, 0);
+    timeline.to(industryGrid, { rowGap: endLayout.rowGap, duration, ease: 'power2.inOut' }, 0);
     if (intro) {
       gsap.set(market, { zIndex: 3 });
       gsap.set(intro, { zIndex: 4 });
@@ -168,7 +185,7 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     let lastStart = -Infinity;
     for (const card of cards) {
       if (revealed.has(card)) continue;
-      const startBox = cardBox(card, startScale), endBox = cardBox(card, endScale);
+      const startBox = startPositions.get(card), endBox = endPositions.get(card);
       const startTop = startBox.top + start, endTop = endBox.top + end;
       if (endTop >= viewport || startTop + startBox.height <= 0) continue;
       let crossing = 0;
@@ -185,8 +202,7 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     }
     return { timeline, finish() {
       gsap.set(track, { y: end });
-      currentScale = endScale;
-      gsap.set(industryGrid, { scale: endScale });
+      applyLayout(endLayout); measure();
       if (intro) gsap.set(intro, { clearProps: 'transform' });
       if (isMarket(to)) { activeScene = to; accessible(end); }
     } };

@@ -7,7 +7,7 @@ const GROUPS = [
   { title: 'Invitation', ids: ['invitation-cover', 'living-portrait', 'why-we-build', 'partner-invitation'] },
   { title: 'Seminal projects', ids: ['projects-intro','projects-civic', 'projects-work', 'projects-care', 'projects-industry'] },
   { title: 'Art and collaboration', ids: ['collection-intro', 'collection', 'office-art', 'collection-artists', 'hope-plaza'] },
-  { title: 'Possibilities', ids: ['spaces-intro','model-scale','opportunities-plan','opportunity-prefunction','opportunity-timeline','possibility'] },
+  { title: 'Possibilities', ids: ['spaces-intro','opportunities-plan','opportunity-prefunction','opportunity-timeline','possibility'] },
 ];
 const LABELS = {
   'invitation-cover': 'How vision takes form', 'living-portrait': 'A living portrait',
@@ -17,7 +17,7 @@ const LABELS = {
   'hope-plaza': 'A place for hope', collection: 'The Clark Collection',
   'office-art': 'Art in our spaces', 'collection-artists': 'Artists and perspectives',
   possibility: 'Imagine together',
-  'projects-intro':'The story behind the work', 'collection-intro':'Art as part of life', 'spaces-intro':'Space for possibility', 'model-scale':'Understanding the scale',
+  'projects-intro':'The story behind the work', 'collection-intro':'Art as part of life', 'spaces-intro':'Space for possibility',
   'opportunities-plan': 'One possible setting',
   'opportunity-prefunction': 'Pre-function gallery', 'opportunity-timeline': 'Timeline corridor',
 };

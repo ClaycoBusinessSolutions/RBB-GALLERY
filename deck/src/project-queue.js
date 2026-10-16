@@ -24,7 +24,6 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
 
   for (const scene of scenes.filter(isMarket)) {
     scene.classList.add('seminal-projects--stream');
-    if (scene.dataset.projectContinuation) continue;
     const originals = [...scene.querySelectorAll('.project-collage button[data-project-id]')];
     const ids = [...new Set(originals.map(button => button.dataset.projectId))];
     const section = document.createElement('section');
@@ -57,13 +56,27 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
   }
   scenes.find(isMarket)?.prepend(root);
   const positions = new Map();
+  const industry = groups.get('projects-industry');
+  const industryGrid = industry.querySelector('.project-stream__grid');
+  industryGrid.style.transformOrigin = '50% 0';
+  let currentScale = 1;
 
   function measure() {
     for (const card of cards) {
       const group = card.closest('.project-stream__market');
       const grid = card.parentElement;
-      positions.set(card, { top: group.offsetTop + grid.offsetTop + card.offsetTop, height: card.offsetHeight });
+      positions.set(card, { base: group.offsetTop + grid.offsetTop, row: card.offsetTop, height: card.offsetHeight, industry: group === industry });
     }
+  }
+  function fittedScale(scene) {
+    if (scene?.dataset.compositionId !== 'projects-industry') return 1;
+    // Preserve image proportions and the title size; reserve room for navigation.
+    const available = root.clientHeight - 80 - industryGrid.offsetTop - 80;
+    return Math.min(1, Math.max(.1, available / industryGrid.offsetHeight));
+  }
+  function cardBox(card, scale = currentScale) {
+    const box = positions.get(card), factor = box.industry ? scale : 1;
+    return { top: box.base + box.row * factor, height: box.height * factor };
   }
   function hydrate() {
     if (destroyed) return;
@@ -85,24 +98,20 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
   gsap.set(cards, { autoAlpha: 0, y: 64 });
 
   function targetY(scene) {
-    const group = groups.get(scene.dataset.projectContinuation || scene.dataset.compositionId);
-    // A final stop exposes the third industrial row at the same image size.
-    const grid = group.querySelector('.project-stream__grid');
-    const continuation = scene.dataset.projectContinuation ? grid.offsetTop + (grid.children[4]?.offsetTop || 0) : 0;
-    return 80 - group.offsetTop - continuation;
+    return 80 - groups.get(scene.dataset.compositionId).offsetTop;
   }
   function mount(scene) { if (root.parentElement !== scene) scene.prepend(root); }
   function settleVisible(y) {
     const height = root.clientHeight;
     for (const card of cards) {
-      const box = positions.get(card), top = box.top + y;
+      const box = cardBox(card), top = box.top + y;
       if (top < height) { revealed.add(card); gsap.set(card, { autoAlpha: 1, y: 0 }); }
     }
   }
   function accessible(y) {
     const height = root.clientHeight;
     for (const card of cards) {
-      const box = positions.get(card), top = box.top + y;
+      const box = cardBox(card), top = box.top + y;
       const visible = top + box.height > 30 && top < height - 60;
       card.inert = !visible;
       card.tabIndex = visible ? 0 : -1;
@@ -117,6 +126,8 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     if (destroyed || !isMarket(scene)) { pause(); return; }
     activeScene = scene; mount(scene); measure();
     const y = targetY(scene);
+    currentScale = fittedScale(scene);
+    gsap.set(industryGrid, { scale: currentScale });
     gsap.set(track, { y }); settleVisible(y); accessible(y);
     enabled = true; root.inert = false;
   }
@@ -125,7 +136,7 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     if (!isMarket(scene)) return;
     await ready;
     // Decode the next market before it approaches the bottom edge.
-    const section = groups.get(scene.dataset.projectContinuation || scene.dataset.compositionId);
+    const section = groups.get(scene.dataset.compositionId);
     await Promise.allSettled([...section.querySelectorAll('img')].map(image => image.decode()));
   }
   function transition(from, to) {
@@ -137,11 +148,15 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     const entering = isIntro(from), leaving = isIntro(to);
     const start = entering ? viewport : targetY(from);
     const end = leaving ? viewport : targetY(to);
+    const startScale = fittedScale(from), endScale = fittedScale(to);
     const duration = 2.15;
     const ease = gsap.parseEase('power2.inOut');
     gsap.set(track, { y: start });
+    gsap.set(industryGrid, { scale: startScale });
     gsap.set([from, to], { opacity: 1 });
     timeline.to(track, { y: end, duration, ease: 'power2.inOut' }, 0);
+    // Compress with the same easing as the upward travel, so rows stay connected.
+    timeline.to(industryGrid, { scale: endScale, duration, ease: 'power2.inOut' }, 0);
     if (intro) {
       gsap.set(market, { zIndex: 3 });
       gsap.set(intro, { zIndex: 4 });
@@ -153,11 +168,12 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     let lastStart = -Infinity;
     for (const card of cards) {
       if (revealed.has(card)) continue;
-      const { top, height } = positions.get(card);
-      if (top + end >= viewport || top + start + height <= 0) continue;
+      const startBox = cardBox(card, startScale), endBox = cardBox(card, endScale);
+      const startTop = startBox.top + start, endTop = endBox.top + end;
+      if (endTop >= viewport || startTop + startBox.height <= 0) continue;
       let crossing = 0;
-      if (start > end && top + start > viewport) {
-        const progress = Math.max(0, Math.min(1, (top + start - viewport) / (start - end)));
+      if (startTop > endTop && startTop > viewport) {
+        const progress = Math.max(0, Math.min(1, (startTop - viewport) / (startTop - endTop)));
         let low = 0, high = 1;
         for (let i = 0; i < 20; i++) { const mid = (low + high) / 2; if (ease(mid) < progress) low = mid; else high = mid; }
         crossing = high * duration;
@@ -169,6 +185,8 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     }
     return { timeline, finish() {
       gsap.set(track, { y: end });
+      currentScale = endScale;
+      gsap.set(industryGrid, { scale: endScale });
       if (intro) gsap.set(intro, { clearProps: 'transform' });
       if (isMarket(to)) { activeScene = to; accessible(end); }
     } };

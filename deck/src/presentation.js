@@ -26,6 +26,7 @@ let queue = null, navigationTarget = 0, autoTimer, transition, menuBusy = false;
 let menuWanted = false, menuGeneration = 0, menuPromise = Promise.resolve(true), menuSheetTween;
 const isProjectCover = scene => scene?.dataset.compositionId === 'invitation-cover';
 const isCollection = scene => scene?.dataset.compositionId === 'collection';
+const normalizeSceneId = id => id === 'projects-industry-continued' ? 'projects-industry' : id;
 const isOverlay = () => !$('#overview').hidden || !!document.querySelector('dialog[open]');
 const moving = () => state.motion && !reduced.matches && !document.hidden && !isOverlay();
 const seminalProjects = createSeminalProjects({ onOpen: pauseForOverlay, onClose: refreshMotion });
@@ -77,9 +78,7 @@ function updateChrome() {
   nav.hidden = menuWanted || menuBusy;
   nav.inert = menuWanted || menuBusy;
  }
- museumMenu?.setIndex(current.dataset.projectContinuation
-  ? scenes.findIndex(scene => scene.dataset.compositionId === current.dataset.projectContinuation)
-  : state.index);
+ museumMenu?.setIndex(state.index);
 }
 async function prepareScene(scene) {
  await Promise.all([hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
@@ -140,6 +139,7 @@ function scheduleAuto() {
 function stepBy(delta) { return go((queue ?? (state.transitioning ? navigationTarget : state.index)) + delta); }
 async function go(index, { instant = false, seek = false } = {}) {
  if (typeof index === 'string' && !/^\d+$/.test(index)) {
+  index = normalizeSceneId(index);
   index = scenes.findIndex(scene => scene.dataset.compositionId === index);
   if (index < 0) return;
  }
@@ -320,7 +320,7 @@ const ready = (async () => {
   $('#art-field').removeAttribute('aria-hidden');
  } catch (error) { console.warn(error); }
  await projectReady;
- const hash = decodeURIComponent(location.hash.slice(1));
+ const hash = normalizeSceneId(decodeURIComponent(location.hash.slice(1)));
  const initial = scenes.findIndex(scene => scene.dataset.compositionId === hash);
  await go(initial < 0 ? 0 : initial, { instant: reduced.matches });
  return true;

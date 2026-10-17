@@ -13,13 +13,15 @@
   .scene .eyebrow{position:static;inset:auto;font-size:12px;line-height:1.5;letter-spacing:.08em;margin:0 0 24px;font-weight:500;white-space:normal}
   .keep-words{white-space:normal!important}
   .scene button,.scene a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-  #slide-navigation{inset:auto 0 0;min-height:72px;padding:8px max(12px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:var(--paper);border-top:1px solid #0002;pointer-events:auto;font-size:15px;transition:none}
-  #slide-navigation[data-theme="dark"]{background:#000;border-top-color:#fff3;color:#fff}
-  #slide-navigation button{min-height:48px;min-width:48px;padding:12px!important;font-size:15px;background:transparent!important;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:4px}
+  #slide-navigation{inset:auto 0 0;min-height:72px;padding:8px max(12px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:linear-gradient(to bottom,transparent,var(--nav-surface,var(--paper)) 26px);border:0;color:var(--nav-ink,#000);pointer-events:none;font-size:15px;transition:color .3s ease;padding-top:22px}
+  #slide-navigation[data-theme="dark"]{color:var(--nav-ink,var(--paper))}
+  #slide-navigation button{min-height:48px;min-width:48px;padding:12px!important;font-size:15px;background:transparent!important;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:4px;pointer-events:auto}
   #slide-navigation #nav-menu>span{display:none}
   #nav-menu::before{content:"";display:block;width:20px;height:14px;border-block:2px solid currentColor;background:linear-gradient(currentColor,currentColor) center/100% 2px no-repeat}
   .slide-navigation__steps{gap:4px}#nav-count{font-size:12px;min-width:44px;text-align:center;opacity:.8}
   #slide-navigation button:disabled{opacity:.35}
+  /* Scroll positions remain stable while the two viewport layers animate. */
+  #stage.mobile-transitioning .scene.active{overflow-y:hidden;touch-action:none;pointer-events:none}
   /* Cover photographs remain prominent above the invitation. */
   .project-cover .scene-inner{display:flex;flex-direction:column;justify-content:flex-end;gap:18px;padding-top:48vh;pointer-events:none}
   .project-cover .eyebrow{position:absolute;top:24px;left:24px;right:24px;text-align:left;z-index:2;margin:0;font-size:11px}
@@ -34,9 +36,10 @@
   #project-field .rbb-art-field__card img,#art-field .rbb-art-field__card img{display:block;width:100%;height:100%}
   #project-field .rbb-art-field__card img{object-fit:cover}
   #art-field .rbb-art-field__card img{object-fit:contain}
-  .source-statement .scene-inner{padding-top:44px}
-  .source-statement .source-statement__body{display:block;margin:28px 0 0;font-size:18px;line-height:1.55;letter-spacing:-.01em}
-  .source-statement .source-statement__body p{white-space:normal;margin:0 0 22px}
+  .source-statement .scene-inner{padding-top:40px}
+  .source-statement:not(.source-invitation) h2{font-size:clamp(40px,10.7vw,64px)!important;line-height:1.08!important;min-height:25svh;text-wrap:pretty}
+  .source-statement .source-statement__body{display:block;margin:40px 0 0 24px;font-size:20px;line-height:1.48;letter-spacing:-.018em;max-width:36ch}
+  .source-statement .source-statement__body p{white-space:normal;margin:0 0 30px}
   .source-invitation .scene-inner{display:flex;align-items:center}
   .source-invitation .source-invitation-copy{position:static;max-width:100%;font-size:clamp(27px,7vw,45px);line-height:1.3;margin:0;letter-spacing:-.025em;text-wrap:pretty}
   .source-invitation-line{display:inline;white-space:normal}
@@ -121,16 +124,17 @@
   .collaboration-invitation__signature{position:static;margin:16px 0 0;font-size:14px;line-height:1.4}
   /* Thumb-friendly menu and dialogs. */
   #overview.museum-menu{z-index:150;font-size:16px;padding:0}
-  #overview .museum-menu__inner{padding:24px 24px calc(32px + env(safe-area-inset-bottom));transform:none!important}
+  #overview .museum-menu__inner{padding:24px 24px calc(32px + env(safe-area-inset-bottom));will-change:auto}
   #overview .museum-menu__top-row{position:sticky;top:0;background:#efeee8;z-index:2;gap:16px;margin:0 0 26px;padding-bottom:12px}
   #overview .museum-menu__close{font-size:16px;min-height:48px;padding:8px}
-  #overview .museum-menu__links-row{flex-direction:column;gap:28px}
+  #overview .museum-menu__links-row{flex-direction:column;gap:36px}
   #overview .museum-menu__col{gap:12px}
   #overview .museum-menu__eyebrow{font-size:14px}
-  #overview .museum-menu__link{font-size:23px;line-height:1.2;min-height:46px;width:100%;align-items:center;padding:6px 0;gap:12px}
+  #overview .museum-menu__link{font-size:27px;line-height:1.2;min-height:46px;width:100%;align-items:center;padding:6px 0;gap:12px}
   #overview .museum-menu__number{font-size:11px;flex-basis:22px}
   #overview .museum-menu__link-label{white-space:normal}
-  #overview .museum-menu__logo-row{padding-top:40px}
+  #overview .museum-menu__logo-row{padding-top:56px}
+  #overview .museum-menu__wordmark{width:100%;height:auto}
   #overview .museum-menu__shade{display:none}
   dialog,#collection-dialog,.space-reference-dialog{width:calc(100% - 24px);max-width:calc(100% - 24px);max-height:calc(100dvh - 40px);padding:56px 20px 24px;overflow:auto;overscroll-behavior:contain}
   dialog img{max-width:100%;max-height:60vh}
@@ -150,4 +154,8 @@
   .source-art-pair .scene-inner{grid-template-columns:1fr 1fr;gap:24px}
   .wavy-accordion__item{flex-basis:65%;width:65%;aspect-ratio:4/3}
   .section-divider__copy{font-size:32px}
+}
+
+@media (max-width:900px) and (prefers-reduced-motion:reduce) {
+  #slide-navigation{transition:none}
 }

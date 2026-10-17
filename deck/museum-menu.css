@@ -76,6 +76,11 @@
   .museum-menu__col{width:100%}
   .museum-menu__logo-row{gap:1.5em}
 }
+/* The phone menu overlays the stationary presentation sheet (z-index:100).
+   Keep this with the dynamically loaded menu styles so load order is harmless. */
+@media(max-width:900px){
+  #overview.museum-menu{z-index:150}
+}
 @media(max-width:767px){
   #overview.museum-menu{--museum-size-container:clamp(320px,100vw,767px);--museum-font-size:calc(var(--museum-size-container) / 24.375)}
   .museum-menu__inner{padding:2em 1em}

@@ -46,6 +46,7 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
   if (!gsap) throw new Error('The museum menu requires the existing GSAP runtime.');
   const stylesReady = loadStyles();
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const phone = matchMedia('(max-width: 900px)');
   const controller = new AbortController();
   const signal = controller.signal;
   const original = { html: host.innerHTML, className: host.className, hidden: host.hidden, inert: host.inert, role: host.getAttribute('role'), label: host.getAttribute('aria-label'), modal: host.getAttribute('aria-modal'), ariaHidden: host.getAttribute('aria-hidden') };
@@ -183,8 +184,15 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
         }
         resolve(true);
       } });
-      const duration = reduced.matches ? 0 : 1.2;
-      timeline.to(inner, { yPercent: opening ? 0 : -25, duration, ease: 'power3.inOut' }, 0);
+      const duration = reduced.matches ? 0 : phone.matches ? .2 : 1.2;
+      // A long vertical phone menu should fade/rise a few pixels, rather than
+      // move a quarter of its entire scrollable height like the desktop footer.
+      timeline.to(inner, {
+        yPercent: phone.matches ? 0 : opening ? 0 : -25,
+        y: phone.matches && !opening ? -12 : 0,
+        opacity: phone.matches && !opening ? 0 : 1,
+        duration, ease: phone.matches ? 'power2.out' : 'power3.inOut'
+      }, 0);
       timeline.to(shade, { opacity: opening ? 0 : .5, duration, ease: 'power3.inOut' }, 0);
     });
     return motionPromise;
@@ -198,7 +206,7 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
     if (phase === 'closed') {
       returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       host.scrollTop = 0;
-      gsap.set(inner, { yPercent: -25 });
+      gsap.set(inner, { yPercent: phone.matches ? 0 : -25, y: phone.matches ? -12 : 0, opacity: phone.matches ? 0 : 1 });
       gsap.set(shade, { opacity: .5 });
     }
     phase = 'opening';

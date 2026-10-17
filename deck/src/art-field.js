@@ -25,9 +25,44 @@ function shuffle(items) {
   return result;
 }
 
+// Small native image grids avoid 24 composited 3D layers on phones. The same
+// source artwork is retained; only the desktop ambient field is simplified.
+function mountPhoneArtField(host, items, { onSelect } = {}) {
+  const root = document.createElement('div');
+  root.className = 'rbb-art-field rbb-art-field--mobile';
+  root.dataset.count = String(items.length);
+  root.setAttribute('aria-label', 'Selected images');
+  const camera = document.createElement('div');
+  camera.className = 'rbb-art-field__camera';
+  root.append(camera);
+  const events = new AbortController();
+  for (const item of items.slice(0, 6)) {
+    const card = document.createElement(onSelect ? 'button' : 'div');
+    card.className = 'rbb-art-field__card';
+    if (onSelect) { card.type = 'button'; card.dataset.interactive = 'true'; }
+    const image = new Image();
+    const dimensions = item.card_dimensions || item.dimensions || {};
+    image.alt = item.alt || `${item.title || 'Artwork'}${item.artist ? ` by ${item.artist}` : ''}`;
+    image.width = dimensions.width || 384; image.height = dimensions.height || 384;
+    image.decoding = 'async'; image.loading = 'lazy'; image.draggable = false;
+    image.src = item.card_src || item.src;
+    card.dataset.artworkId = item.id || '';
+    card.setAttribute('aria-label', image.alt);
+    card.append(image); camera.append(card);
+    if (onSelect) card.addEventListener('click', () => onSelect(item), { signal: events.signal });
+  }
+  host.append(root);
+  return {
+    setActive(value) { root.inert = !value; },
+    setMotion() {}, setFocus() {}, seek() {},
+    dispose() { events.abort(); root.remove(); },
+  };
+}
+
 export function mountArtField(host, artworks, { onSelect } = {}) {
   if (!host?.append) throw new TypeError('mountArtField requires a host element.');
   const items = shuffle((Array.isArray(artworks) ? artworks : []).filter(a => a?.card_src || a?.src));
+  if (window.matchMedia('(max-width: 900px)').matches) return mountPhoneArtField(host, items, { onSelect });
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let active = false, motion = true, disposed = false, time = 0, focus = 0, frame = 0, stamp = 0;
   const root = document.createElement('div');

@@ -32,7 +32,8 @@ let menuWanted = false, menuGeneration = 0, menuPromise = Promise.resolve(true),
 const isProjectCover = scene => scene?.dataset.compositionId === 'invitation-cover';
 const isCollection = scene => scene?.dataset.compositionId === 'collection';
 const isOverlay = () => !$('#overview').hidden || !!document.querySelector('dialog[open]');
-const moving = () => state.motion && !phone.matches && !reduced.matches && !document.hidden && !isOverlay();
+const transitionMotion = () => state.motion && !reduced.matches && !document.hidden && !isOverlay() && state.mode === 'live';
+const moving = () => !phone.matches && transitionMotion();
 const seminalProjects = createSeminalProjects({ onOpen: pauseForOverlay, onClose: refreshMotion });
 const hopeGallery = createHopeGallery();
 const spaceOpportunities = createSpaceOpportunities({ onNavigate: go, onOpen: pauseForOverlay, onClose: refreshMotion });
@@ -79,6 +80,10 @@ function updateChrome() {
  $('#motion-button')?.setAttribute('aria-pressed', String(state.motion));
  setText('#status', `Slide ${state.index + 1}. ${current.dataset.label}`);
  if (nav) {
+  const surface = getComputedStyle(current);
+  const surfaceColor = surface.backgroundColor;
+  nav.style.setProperty('--nav-surface', surfaceColor === 'transparent' || surfaceColor === 'rgba(0, 0, 0, 0)' ? getComputedStyle(stage).backgroundColor : surfaceColor);
+  nav.style.setProperty('--nav-ink', surface.color);
   nav.dataset.theme = current.matches('.source-statement,.invitation-cover,.seminal-projects,.office-art,.collaboration-invitation,.section-divider,.clark-cover,.space-opportunity--night') ? 'dark' : 'light';
   nav.hidden = menuWanted || menuBusy;
   nav.inert = menuWanted || menuBusy;
@@ -154,7 +159,7 @@ function startAmbient(scene) {
 }
 function refreshMotion() {
  if (state.transitioning) {
-  if (!moving()) transition?.progress(1);
+  if (!transitionMotion()) transition?.progress(1);
   updateChrome();
   return;
  }
@@ -203,6 +208,25 @@ addEventListener('pagehide', () => {
  stopAmbient(scenes[state.index]); clearTimeout(autoTimer);
 });
 addEventListener('pageshow', event => { if (event.persisted && initialized) { resize(); refreshMotion(); } });
+// Market slides share one live stream. Preserve just the outgoing market while
+// the stream moves to its new scene, so phone transitions never reveal an empty
+// black page. This is a short-lived inert DOM copy, not a second interactive view.
+function snapshotPhoneMarket(scene) {
+ const live = scene.querySelector(':scope > .project-stream');
+ const track = live?.querySelector('.project-stream__track');
+ const market = track?.querySelector(`[data-market="${scene.dataset.compositionId}"]`);
+ if (!live || !track || !market) return null;
+ const snapshot = live.cloneNode(false), copyTrack = track.cloneNode(false);
+ copyTrack.append(market.cloneNode(true)); snapshot.append(copyTrack);
+ snapshot.dataset.phoneExitSnapshot = '';
+ snapshot.inert = true; snapshot.setAttribute('aria-hidden', 'true');
+ for (const node of [snapshot, ...snapshot.querySelectorAll('*')]) {
+  for (const attribute of ['id', 'aria-labelledby', 'aria-describedby', 'aria-controls', 'autofocus']) node.removeAttribute(attribute);
+  if (node.matches('button,a,input,[tabindex]')) node.tabIndex = -1;
+ }
+ scene.append(snapshot);
+ return snapshot;
+}
 function stepBy(delta) { return go((queue ?? (state.transitioning ? navigationTarget : state.index)) + delta); }
 async function go(index, { instant = false, seek = false } = {}) {
  if (typeof index === 'string' && !/^\d+$/.test(index)) {
@@ -230,11 +254,17 @@ async function go(index, { instant = false, seek = false } = {}) {
  } else await preparation;
  const hasFrom = from.classList.contains('active');
  state.index = index; updateChrome();
- const animate = !instant && !phone.matches && !reduced.matches && state.motion && state.mode === 'live';
- const mapMorph = spaceOpportunities.beginTransition(from, to, { duration: SCENE_MOTION.duration, motion: animate && hasFrom });
- const useProjectSequence = animate && hasFrom && isProjectSequence(from, to);
+ const phoneTransition = phone.matches;
+ const animate = !instant && transitionMotion();
+ const duration = animate ? phoneTransition ? .8 : SCENE_MOTION.duration : 0;
+ const projectStep = animate && hasFrom && isProjectSequence(from, to);
+ const useProjectSequence = !phoneTransition && projectStep;
+ const phoneProjectStep = phoneTransition && projectStep;
+ const phoneSnapshot = phoneTransition && animate && hasFrom && from !== to && from.matches('.seminal-projects') && to.matches('.seminal-projects') ? snapshotPhoneMarket(from) : null;
+ if (phoneTransition && animate) stage.classList.add('mobile-transitioning');
+ const mapMorph = spaceOpportunities.beginTransition(from, to, { duration, motion: animate && hasFrom });
  if (!useProjectSequence) seminalProjects.settle(to);
- const arc = animate && !useProjectSequence ? arcs.begin(to, { direction, curve: 12 }) : null;
+ const arc = animate && !useProjectSequence && !phoneProjectStep ? arcs.begin(to, { direction, curve: phoneTransition ? 22 : 12 }) : null;
  to.classList.add('active'); to.inert = false; to.setAttribute('aria-hidden', 'false');
  if (phone.matches) to.scrollTop = 0;
  from.inert = true; from.style.pointerEvents = 'none';
@@ -242,14 +272,21 @@ async function go(index, { instant = false, seek = false } = {}) {
  timelines[to.dataset.compositionId].progress(1).pause();
  gsap.set(to.querySelector('.scene-inner'), { clearProps: 'transform,opacity' });
  if (isCollection(to)) { art?.setActive(moving()); focus.value = 1; art?.setFocus(1); $('#art-field').style.opacity = '1'; }
- const duration = animate ? SCENE_MOTION.duration : 0;
  const projectSequence = useProjectSequence ? seminalProjects.beginTransition(from, to) : null;
  await new Promise(resolve => {
   transition = gsap.timeline({ onComplete: resolve });
   if (mapMorph) transition.add(mapMorph.timeline.paused(false), 0);
   if (projectSequence) transition.add(projectSequence.timeline.paused(false), 0);
-  else {
-  addSceneReveal(transition, to, { instant: !duration, direction });
+  else if (phoneProjectStep) {
+   // One viewport push keeps the market photographs moving up and out, while
+   // each settled portrait market remains freely scrollable and readable.
+   const distance = stage.clientHeight;
+   gsap.set([from, to], { opacity: 1 });
+   transition.fromTo(to, { y: direction * distance }, { y: 0, duration, ease: 'power3.inOut' }, 0);
+   transition.to(from, { y: -direction * distance, duration, ease: 'power3.inOut' }, 0);
+   settleSceneReveal(to);
+  } else {
+  addSceneReveal(transition, to, { instant: !duration, direction, compact: phoneTransition });
   if (arc) {
    gsap.set(to, { opacity: 1 });
    const arcClock = { progress: 0 };
@@ -259,7 +296,7 @@ async function go(index, { instant = false, seek = false } = {}) {
   gsap.set(to.querySelector('.scene-inner'), { clearProps: 'transform,opacity' });
   if (hasFrom && from !== to) {
    if (!arc) transition.to(from, { opacity: 0, duration: duration * .9, ease: 'power2.inOut' }, 0);
-   transition.to(from.querySelector('.scene-inner'), { opacity: 0, y: -direction * 16, duration: duration ? .32 : 0, ease: 'power2.in' }, 0);
+   if (!phoneTransition) transition.to(from.querySelector('.scene-inner'), { opacity: 0, y: -direction * 16, duration: duration ? .32 : 0, ease: 'power2.in' }, 0);
   }
   }
   if (isCollection(from) || isCollection(to)) {
@@ -268,6 +305,9 @@ async function go(index, { instant = false, seek = false } = {}) {
   if (!duration) transition.progress(1);
  });
  arc?.dispose(); mapMorph?.finish(); projectSequence?.finish();
+ phoneSnapshot?.remove();
+ if (phoneTransition) gsap.set([from, to], { clearProps: 'transform' });
+ stage.classList.remove('mobile-transitioning');
  for (const scene of scenes) {
   const active = scene === to;
   scene.classList.toggle('active', active); scene.inert = !active; scene.setAttribute('aria-hidden', String(!active));
@@ -291,7 +331,7 @@ function setOverviewOpen(wanted) {
  const menuMotion = wanted ? museumMenu.open() : museumMenu.close();
  menuSheetTween?.kill();
  const sheetMotion = new Promise(resolve => {
-  menuSheetTween = gsap.to(sheet, { yPercent: wanted ? -100 : 0, duration: phone.matches || reduced.matches ? 0 : 1.2, ease: 'power3.inOut', onComplete: () => resolve(true), onInterrupt: () => resolve(false) });
+  menuSheetTween = gsap.to(sheet, { yPercent: phone.matches ? 0 : wanted ? -100 : 0, duration: phone.matches || reduced.matches ? 0 : 1.2, ease: 'power3.inOut', onComplete: () => resolve(true), onInterrupt: () => resolve(false) });
  });
  menuPromise = Promise.all([menuMotion, sheetMotion]).then(() => {
   if (generation !== menuGeneration) return false;
@@ -379,6 +419,7 @@ document.addEventListener('space-opportunity-change', updateChrome);
 document.addEventListener('visibilitychange', refreshMotion);
 reduced.addEventListener('change', () => { state.motion = !reduced.matches; refreshMotion(); });
 phone.addEventListener('change', async () => {
+ if (state.transitioning) transition?.progress(1);
  // Cover fields and the office gallery choose their renderer at mount time.
  // Recreate only these small, mode-dependent views when crossing the breakpoint.
  fieldGeneration++;

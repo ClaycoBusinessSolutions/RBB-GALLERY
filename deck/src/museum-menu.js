@@ -184,12 +184,13 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
         }
         resolve(true);
       } });
-      const duration = reduced.matches ? 0 : phone.matches ? .2 : 1.2;
+      const duration = reduced.matches ? 0 : phone.matches ? .48 : 1.2;
+      if (phone.matches) timeline.to(host, { opacity: opening ? 1 : 0, duration, ease: 'power2.inOut' }, 0);
       // A long vertical phone menu should fade/rise a few pixels, rather than
       // move a quarter of its entire scrollable height like the desktop footer.
       timeline.to(inner, {
         yPercent: phone.matches ? 0 : opening ? 0 : -25,
-        y: phone.matches && !opening ? -12 : 0,
+        y: phone.matches && !opening ? 28 : 0,
         opacity: phone.matches && !opening ? 0 : 1,
         duration, ease: phone.matches ? 'power2.out' : 'power3.inOut'
       }, 0);
@@ -206,7 +207,8 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
     if (phase === 'closed') {
       returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       host.scrollTop = 0;
-      gsap.set(inner, { yPercent: phone.matches ? 0 : -25, y: phone.matches ? -12 : 0, opacity: phone.matches ? 0 : 1 });
+      gsap.set(host, { opacity: phone.matches ? 0 : 1 });
+      gsap.set(inner, { yPercent: phone.matches ? 0 : -25, y: phone.matches ? 28 : 0, opacity: phone.matches ? 0 : 1 });
       gsap.set(shade, { opacity: .5 });
     }
     phase = 'opening';

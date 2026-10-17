@@ -1,13 +1,13 @@
-import { mountArtField } from './art-field.js';
-import { mountProjectField } from './project-field.js';
-import { mountArcTransition } from './arc-transition.js';
-import { mountMuseumMenu } from './museum-menu.js';
-import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js';
-import { createSeminalProjects } from './seminal-projects.js';
-import { isProjectSequence } from './project-sequence.js';
-import { createHopeGallery } from './hope-gallery.js';
-import { createSpaceOpportunities } from './space-opportunities.js';
-import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js';
+import { mountArtField } from './art-field.js?v=817fbdac022f186ec38e';
+import { mountProjectField } from './project-field.js?v=817fbdac022f186ec38e';
+import { mountArcTransition } from './arc-transition.js?v=817fbdac022f186ec38e';
+import { mountMuseumMenu } from './museum-menu.js?v=817fbdac022f186ec38e';
+import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=817fbdac022f186ec38e';
+import { createSeminalProjects } from './seminal-projects.js?v=817fbdac022f186ec38e';
+import { isProjectSequence } from './project-sequence.js?v=817fbdac022f186ec38e';
+import { createHopeGallery } from './hope-gallery.js?v=817fbdac022f186ec38e';
+import { createSpaceOpportunities } from './space-opportunities.js?v=817fbdac022f186ec38e';
+import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=817fbdac022f186ec38e';
 
 const $ = selector => document.querySelector(selector);
 const scenes = [...document.querySelectorAll('.scene')];
@@ -29,6 +29,7 @@ let art, artPromise, projectField, projectFieldPromise, artworks = [], museumMen
 let initialized = false, pendingExternalScene = null, fieldGeneration = 0;
 let queue = null, navigationTarget = 0, autoTimer, transition, menuBusy = false;
 let menuWanted = false, menuGeneration = 0, menuPromise = Promise.resolve(true), menuSheetTween;
+let pendingOverviewOpen = null;
 const isProjectCover = scene => scene?.dataset.compositionId === 'invitation-cover';
 const isCollection = scene => scene?.dataset.compositionId === 'collection';
 const isOverlay = () => !$('#overview').hidden || !!document.querySelector('dialog[open]');
@@ -121,7 +122,7 @@ async function prepareScene(scene) {
  await Promise.allSettled([prepareCover(scene), hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
  if (scene.dataset.compositionId === 'office-art') {
   const generation = fieldGeneration;
-  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js').then(async ({ mountWavyAccordion }) => {
+  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=817fbdac022f186ec38e').then(async ({ mountWavyAccordion }) => {
    if (generation !== fieldGeneration) return null;
    const root = scene.querySelector('[data-wavy-accordion-init]');
    officeAccordion = mountWavyAccordion(root, { onSelect: index => openOfficePhoto(root, index) });
@@ -255,7 +256,7 @@ async function go(index, { instant = false, seek = false } = {}) {
  const hasFrom = from.classList.contains('active');
  state.index = index; updateChrome();
  const phoneTransition = phone.matches;
- const animate = !instant && transitionMotion();
+ const animate = !instant && !pendingOverviewOpen && transitionMotion();
  const duration = animate ? phoneTransition ? .8 : SCENE_MOTION.duration : 0;
  const projectStep = animate && hasFrom && isProjectSequence(from, to);
  const useProjectSequence = !phoneTransition && projectStep;
@@ -320,6 +321,11 @@ async function go(index, { instant = false, seek = false } = {}) {
  gsap.set(to, { clearProps: 'opacity,zIndex,pointerEvents' }); to.inert = false;
  state.transitioning = false; startAmbient(to);
  if (!seek) { rememberScene(to); scheduleAuto(); }
+ if (pendingOverviewOpen) {
+  const pending = pendingOverviewOpen; pendingOverviewOpen = null; queue = null;
+  pending.resolve(await setOverviewOpen(true));
+  return;
+ }
  if (queue !== null) { const target = queue; queue = null; if (target !== state.index) go(target); }
 }
 function pauseForOverlay() { stopAmbient(scenes[state.index]); clearTimeout(autoTimer); }
@@ -341,9 +347,26 @@ function setOverviewOpen(wanted) {
  });
  return menuPromise;
 }
-function closeOverview() { return setOverviewOpen(false); }
-function openOverview() { if (state.transitioning && !menuBusy) return Promise.resolve(false); return setOverviewOpen(true); }
-function toggleOverview() { if (!menuWanted && state.transitioning && !menuBusy) return Promise.resolve(false); return setOverviewOpen(!menuWanted); }
+function closeOverview() {
+ pendingOverviewOpen?.resolve(false); pendingOverviewOpen = null;
+ return setOverviewOpen(false);
+}
+function openOverview() {
+ if (state.transitioning) {
+  if (!pendingOverviewOpen) {
+   let resolve;
+   const promise = new Promise(done => { resolve = done; });
+   pendingOverviewOpen = { promise, resolve };
+  }
+  // Honor Menu even during a wipe or optional-media preparation. The current
+  // scene settles first, then its menu opens; extra Next presses are discarded.
+  queue = null;
+  transition?.progress(1);
+  return pendingOverviewOpen.promise;
+ }
+ return setOverviewOpen(true);
+}
+function toggleOverview() { return menuWanted || pendingOverviewOpen ? closeOverview() : openOverview(); }
 function openArt(item) {
  $('#art-image').src = item.preview_src || item.src; $('#art-image').alt = item.alt;
  $('#art-caption').textContent = [item.artist, item.title, item.year, `Catalogue p. ${item.page}`].filter(Boolean).join(' / ');
@@ -420,6 +443,8 @@ document.addEventListener('visibilitychange', refreshMotion);
 reduced.addEventListener('change', () => { state.motion = !reduced.matches; refreshMotion(); });
 phone.addEventListener('change', async () => {
  if (state.transitioning) transition?.progress(1);
+ menuSheetTween?.kill();
+ gsap.set(sheet, { yPercent: menuWanted && !phone.matches ? -100 : 0 });
  // Cover fields and the office gallery choose their renderer at mount time.
  // Recreate only these small, mode-dependent views when crossing the breakpoint.
  fieldGeneration++;

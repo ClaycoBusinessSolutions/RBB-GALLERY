@@ -23,7 +23,7 @@ const LABELS = {
 };
 
 function loadStyles() {
-  const href = new URL('../museum-menu.css', import.meta.url).href;
+  const href = new URL('../museum-menu.css?v=817fbdac022f186ec38e', import.meta.url).href;
   if ([...document.styleSheets].some(sheet => sheet.href === href)) return Promise.resolve();
   let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(item => item.href === href);
   return new Promise(resolve => {
@@ -228,6 +228,19 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
     host.dataset.menuState = phase;
     return animate(false);
   }
+  phone.addEventListener('change', () => {
+    // Finish the requested menu state before changing between overlay and
+    // desktop footer motion; no stale phone opacity or translation may remain.
+    timeline?.progress(1);
+    const visible = phase === 'open' || phase === 'opening';
+    gsap.set(host, { opacity: visible || !phone.matches ? 1 : 0 });
+    gsap.set(inner, {
+      yPercent: visible || phone.matches ? 0 : -25,
+      y: phone.matches && !visible ? 28 : 0,
+      opacity: visible || !phone.matches ? 1 : 0
+    });
+    gsap.set(shade, { opacity: visible ? 0 : .5 });
+  }, { signal });
   function dispose() {
     if (disposed) return;
     disposed = true;

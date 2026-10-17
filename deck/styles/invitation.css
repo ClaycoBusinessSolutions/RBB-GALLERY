@@ -45,3 +45,8 @@
 #collection-dialog h2{font-size:36px;line-height:1.1;font-weight:400;letter-spacing:-.035em;max-width:700px;margin:0 0 30px;text-wrap:balance}
 .collection-dialog__copy p{font-size:18px;line-height:1.55;max-width:none;white-space:normal;margin:0 0 20px}
 @media(max-width:700px){#slide-navigation{left:8px;right:8px;bottom:8px}.slide-navigation__steps{gap:5px}#slide-navigation button{padding:11px 9px}#collection-dialog{padding:40px 24px}#collection-dialog h2{font-size:28px}.collection-dialog__copy p{font-size:16px}}
+
+/* Clear directional icons, with generous pointer and touch targets. */
+#slide-navigation #nav-prev,#slide-navigation #nav-next{display:flex;align-items:center;justify-content:center;min-width:48px;min-height:48px;padding:12px;background:transparent;color:#000}
+#slide-navigation[data-theme="dark"] #nav-prev,#slide-navigation[data-theme="dark"] #nav-next{color:#fff}
+#slide-navigation .nav-arrow{display:block;flex:none;width:24px;height:24px;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}

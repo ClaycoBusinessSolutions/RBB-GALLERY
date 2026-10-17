@@ -10,6 +10,7 @@ const TITLES = {
 
 export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}) {
   const gsap = window.gsap;
+  const phone = matchMedia('(max-width: 900px)');
   const root = document.createElement('div');
   root.className = 'project-stream';
   root.inert = true;
@@ -51,6 +52,7 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
         event.stopPropagation();
         if (enabled && !destroyed) onInspect?.(card);
       }, { signal: controller.signal });
+      card.querySelector('img').loading = 'lazy';
       grid.append(card); cards.push(card);
     }
   }
@@ -91,12 +93,15 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     gsap.set(industryPhotos, { height: layout.photoHeight });
     gsap.set(industryGrid, { rowGap: layout.rowGap });
   }
-  function hydrate() {
+  function hydrate(scene = activeScene) {
     if (destroyed) return;
     for (const card of cards) {
       const project = getProject?.(card.dataset.projectId) || fallback.get(card.dataset.projectId);
       const image = card.querySelector('img');
-      if (image.getAttribute('src') !== project.image) image.src = project.image;
+      // On phones, only the active market requests its images. Native lazy
+      // loading then follows the scene's ordinary vertical scroll viewport.
+      const load = !phone.matches || card.closest('.project-stream__market').dataset.market === scene?.dataset.compositionId;
+      if (load && image.getAttribute('src') !== project.image) image.src = project.image;
       card.querySelector('.project-stream__name').textContent = project.shortTitle || project.title;
       card.querySelector('.project-stream__location').textContent = project.location || '';
       const badge = card.querySelector('.project-stream__image-type');
@@ -107,7 +112,7 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     measure();
   }
   hydrate();
-  Promise.resolve(ready).then(hydrate, () => {});
+  Promise.resolve(ready).then(() => hydrate(), () => {});
   gsap.set(cards, { autoAlpha: 0, y: 64 });
 
   function targetY(scene) {
@@ -135,9 +140,34 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
       section.setAttribute('aria-hidden', String(top + section.offsetHeight < 0 || top > height));
     }
   }
+  function phoneLayout(scene) {
+    root.classList.add('project-stream--mobile');
+    gsap.set(track, { clearProps: 'transform' });
+    gsap.set(industryPhotos, { clearProps: 'height' });
+    gsap.set(industryGrid, { clearProps: 'rowGap' });
+    for (const section of groups.values()) {
+      const selected = section.dataset.market === scene.dataset.compositionId;
+      section.hidden = !selected;
+      section.setAttribute('aria-hidden', String(!selected));
+      section.querySelectorAll('.project-stream__card').forEach(card => {
+        gsap.set(card, { autoAlpha: 1, y: 0 });
+        card.inert = !selected; card.tabIndex = selected ? 0 : -1;
+        card.setAttribute('aria-hidden', String(!selected));
+      });
+    }
+    hydrate(scene);
+  }
+  function desktopLayout() {
+    root.classList.remove('project-stream--mobile');
+    for (const section of groups.values()) section.hidden = false;
+  }
   function activate(scene) {
     if (destroyed || !isMarket(scene)) { pause(); return; }
-    activeScene = scene; mount(scene); applyLayout(layoutFor(scene)); measure();
+    activeScene = scene; mount(scene);
+    if (phone.matches) {
+      phoneLayout(scene); enabled = true; root.inert = false; return;
+    }
+    desktopLayout(); hydrate(); applyLayout(layoutFor(scene)); measure();
     const y = targetY(scene);
     gsap.set(track, { y }); settleVisible(y); accessible(y);
     enabled = true; root.inert = false;
@@ -146,11 +176,14 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
   async function prepare(scene) {
     if (!isMarket(scene)) return;
     await ready;
+    if (phone.matches) { hydrate(scene); return; }
     // Decode the next market before it approaches the bottom edge.
     const section = groups.get(scene.dataset.compositionId);
-    await Promise.allSettled([...section.querySelectorAll('img')].map(image => image.decode()));
+    await Promise.allSettled([...section.querySelectorAll('img')].map(image => { image.loading = 'eager'; return image.decode(); }));
   }
   function transition(from, to) {
+    if (phone.matches) return null;
+    desktopLayout();
     const timeline = gsap.timeline({ paused: true });
     const intro = isIntro(from) ? from : isIntro(to) ? to : null;
     const market = isMarket(to) ? to : from;

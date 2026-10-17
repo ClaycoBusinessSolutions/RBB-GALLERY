@@ -16,6 +16,7 @@ const AZIMUTHS = { shelf: -2.37, wall: -2.8, combined: -2.55 };
 export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
  const scenes = [...document.querySelectorAll('[data-space-opportunity]')];
  const overview = document.querySelector('[data-space-overview]');
+ const phone = matchMedia('(max-width: 900px)');
  const states = new Map(scenes.map(scene => [scene, { option: DEFAULTS[scene.dataset.spaceOpportunity], view: 'axon', lighting: 'day' }]));
  let activeScene = null, modelScene = null, model = null, modelPromise = null, plan = null;
  let motion = true, disposed = false, dialog = null, dialogOpener = null, mapTransition = null;
@@ -62,7 +63,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   mapTransition?.dispose();
   ensureKeymaps();
   const source = mapFor(from), target = mapFor(to), gsap = globalThis.gsap;
-  if (!source || !target || source === target || !gsap || !enabled || matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+  if (phone.matches || !source || !target || source === target || !gsap || !enabled || matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
   const start = mapBounds(source), end = mapBounds(target);
   if (!start.width || !end.width) return null;
   const stage = document.querySelector('#stage'), overlay = document.createElement('div');
@@ -107,7 +108,8 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
  function sync(scene) {
   const state = states.get(scene);
   if (!state) return;
-  scene.classList.toggle('space-opportunity--night', state.lighting === 'night');
+  scene.classList.toggle('space-opportunity--mobile', phone.matches);
+  scene.classList.toggle('space-opportunity--night', !phone.matches && state.lighting === 'night');
   for (const [attribute, key] of [['spaceOption','option'], ['spaceView','view'], ['spaceLight','lighting']]) {
    scene.querySelectorAll(`[data-${attribute.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}]`).forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset[attribute] === state[key]));
@@ -153,6 +155,9 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   if (!isSpace(scene)) return;
   ensureKeymaps();
   sync(scene);
+  // Keep the supplied concept renderings and connected SVG keymap on phones.
+  // Never import spatial.js or allocate its WebGL renderer for this mode.
+  if (phone.matches) { model?.update({ active: false, motion: false }); return; }
   await Promise.allSettled([...scene.querySelectorAll('[data-space-reference-image]')].map(image => { image.loading = 'eager'; return image.decode(); }));
   const host = scene.querySelector('[data-space-model]');
   const instance = await loadModel(host);
@@ -174,12 +179,13 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
  }
  function activate(scene, { motion: enabled = true } = {}) {
   if (disposed) return;
-  motion = enabled !== false;
+  motion = enabled !== false && !phone.matches;
   activeScene = scene;
   plan?.setActive(scene === overview, { motion });
   if (scene === overview) ensurePlan()?.setActive(true, { motion });
   if (!isSpace(scene)) { model?.update({ active: false }); return; }
   sync(scene);
+  if (phone.matches) { model?.update({ active: false, motion: false }); return; }
   if (model && modelScene === scene) {
    scene.querySelector('[data-space-snapshot]').hidden = true;
    model.update({ ...modelState(scene), active: true, motion, reveal: false });
@@ -233,7 +239,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   else if (button.dataset.spaceLight) state.lighting = button.dataset.spaceLight;
   else return;
   sync(scene);
-  if (modelScene === scene) model?.update({ ...modelState(scene), active: activeScene === scene, motion, reveal: false });
+  if (!phone.matches && modelScene === scene) model?.update({ ...modelState(scene), active: activeScene === scene, motion, reveal: false });
   scene.dispatchEvent(new CustomEvent('space-opportunity-change', { bubbles: true, detail: { ...state } }));
  }
  function seek(scene, seconds = 0) {

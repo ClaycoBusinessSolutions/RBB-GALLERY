@@ -9,6 +9,8 @@ This repository serves the reviewed static presentation from `main`. Open the pu
 - Arrow keys or Previous / Next: advance the presentation
 - Seminal projects: Next / Previous and arrow keys move a continuous gallery of project cards. Market headings travel with the images. The industrial gallery keeps the same column widths while photo-frame heights and row gaps smoothly compress to show all three rows together. Click any card for details and official sources
 
+On phones, the deck uses a portrait reading layout with a hamburger menu, large Previous / Next controls, vertically scrollable market pages, and swipeable office photographs. Current-slide links and reload recovery keep your place. Phone covers and spatial studies use lightweight images; the desktop animation and interactive model experience remains available on wider screens.
+
 Section introductions are labeled as placeholder copy for editorial review. Spatial concepts are potential opportunities for discussion.
 
 For a local preview, run `python3 launch.py --no-open` and open the loopback URL printed in the terminal.

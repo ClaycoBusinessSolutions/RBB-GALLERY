@@ -12,7 +12,7 @@ export async function mountProjectField(host, { onSelect } = {}) {
   host.setAttribute('aria-label', 'Clayco projects across four decades of building');
   const field = mountArtField(host, projects, { onSelect });
   const root = host.querySelector('.rbb-art-field');
-  root?.setAttribute('aria-label', 'A moving field of Clayco project photographs and renderings');
+  root?.setAttribute('aria-label', root.classList.contains('rbb-art-field--mobile') ? 'Selected Clayco project photographs and renderings' : 'A moving field of Clayco project photographs and renderings');
   host.dataset.projectCount = String(projects.length);
   let disposed = false;
   return {

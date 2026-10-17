@@ -1,4 +1,4 @@
-const BUILD="b9279d1320befd21ece2";
+const BUILD="c1575261dd92a459c946";
 const root=new URL('./',location.href),frame=document.querySelector('iframe'),status=document.querySelector('[role="status"]');
 let mounted=false;
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -42,10 +42,17 @@ function mount(){
   frame.addEventListener('load',()=>{status.hidden=true;frame.focus();},{once:true});
   frame.src=target.href;
 }
+// Keep the outer URL in step with the deck, so a mobile tab restored by the
+// browser resumes its actual slide instead of the initial cover.
+window.addEventListener('message',event=>{
+  if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
+  if(event.data?.type!=='RBB_SCENE'||typeof event.data.scene!=='string'||!/^[-a-z0-9]+$/.test(event.data.scene))return;
+  const url=new URL(location.href);url.hash=event.data.scene;
+  history.replaceState(null,'',url.href);
+});
 window.addEventListener('hashchange',()=>{
   if(!mounted)return;
-  const target=new URL('deck/index.html',root);target.searchParams.set('v',BUILD);target.hash=location.hash;
-  frame.src=target.href;
+  frame.contentWindow?.postMessage({type:'RBB_NAVIGATE',scene:location.hash.slice(1)},location.origin);
 });
 retireEncryptedRouting().then(ready=>{if(ready)mount();}).catch(error=>{
   console.error('RBB public migration:',error);status.textContent=error.message||'Unable to open the presentation. Please reload this page.';

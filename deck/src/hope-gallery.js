@@ -10,6 +10,7 @@ export function createHopeGallery({ interval = 7000 } = {}) {
   const caption = scene.querySelector('[data-hope-caption]');
   const count = scene.querySelector('[data-hope-count]');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const phone = matchMedia('(max-width: 900px)');
   const controller = new AbortController();
   const { signal } = controller;
   let current = 0, active = false, motion = true, hovered = false, focused = false;
@@ -35,7 +36,7 @@ export function createHopeGallery({ interval = 7000 } = {}) {
   }
   function schedule() {
     clearTimeout(timer);
-    if (active && motion && !reduced.matches && !hovered && !focused && !document.hidden && !destroyed) {
+    if (active && motion && !phone.matches && !reduced.matches && !hovered && !focused && !document.hidden && !destroyed) {
       timer = setTimeout(() => select(current + 1), interval);
     }
   }
@@ -47,6 +48,8 @@ export function createHopeGallery({ interval = 7000 } = {}) {
     const outgoing = frames[current];
     current = next;
     const incoming = frames[current];
+    const image = incoming.querySelector('img');
+    if (image) image.loading = 'eager';
     updateLabels();
     if (!animate || !active || !motion || reduced.matches) {
       settle();
@@ -89,7 +92,7 @@ export function createHopeGallery({ interval = 7000 } = {}) {
 
   return {
     prepare(incoming = scene) {
-      if (incoming !== scene) return Promise.resolve();
+      if (incoming !== scene || phone.matches) return Promise.resolve();
       prepared ||= Promise.allSettled([...root.querySelectorAll('img')].map(image => {
         image.loading = 'eager';
         return image.decode();

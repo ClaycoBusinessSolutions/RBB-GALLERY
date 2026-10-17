@@ -101,6 +101,54 @@ export function mountWavyAccordion(root, { onSelect = () => {} } = {}) {
     throw new Error('Wavy Accordion needs a canvas, a list, and 1–8 image items.');
   }
 
+  // Native swipeable photographs avoid allocating a multi-texture shader on
+  // phone browsers. A tap opens the same original-image dialog as desktop.
+  if (window.matchMedia('(max-width: 900px)').matches) {
+    const events = new AbortController();
+    const hint = root.closest('.scene')?.querySelector('.office-art__hint');
+    const original = {
+      label: root.getAttribute('aria-label'), canvasHidden: canvas.hidden,
+      hint: hint?.textContent,
+      items: items.map(item => ({ status: item.getAttribute('data-wavy-accordion-item-status'), pressed: item.querySelector('button, a')?.getAttribute('aria-pressed') }))
+    };
+    root.classList.add('wavy-accordion--mobile');
+    root.setAttribute('data-wavy-accordion-status', 'mobile');
+    root.setAttribute('aria-label', 'Office artwork photographs. Swipe to browse; tap to enlarge.');
+    canvas.hidden = true;
+    items.forEach((item, index) => {
+      item.setAttribute('data-wavy-accordion-item-status', 'active');
+      images[index].loading = 'lazy';
+      item.querySelector('button, a')?.removeAttribute('aria-pressed');
+      item.addEventListener('click', event => {
+        event.preventDefault();
+        onSelect(index);
+      }, { signal: events.signal });
+    });
+    if (hint) hint.textContent = 'Swipe to explore. Tap a photo to view in full.';
+    return {
+      ready: Promise.resolve({ mode: 'mobile', count }),
+      setActive(value) { root.inert = !value; },
+      setMotion() {}, seek() {},
+      dispose() {
+        events.abort();
+        root.classList.remove('wavy-accordion--mobile');
+        root.inert = false;
+        canvas.hidden = original.canvasHidden;
+        if (original.label === null) root.removeAttribute('aria-label');
+        else root.setAttribute('aria-label', original.label);
+        root.setAttribute('data-wavy-accordion-status', 'fallback');
+        if (hint) hint.textContent = original.hint;
+        items.forEach((item, index) => {
+          const { status, pressed } = original.items[index], button = item.querySelector('button, a');
+          if (status === null) item.removeAttribute('data-wavy-accordion-item-status');
+          else item.setAttribute('data-wavy-accordion-item-status', status);
+          if (pressed == null) button?.removeAttribute('aria-pressed');
+          else button?.setAttribute('aria-pressed', pressed);
+        });
+      },
+    };
+  }
+
   const events = new AbortController();
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const weights = items.map((_, index) => index === 0 ? OPEN_SIZE : 1);
@@ -411,6 +459,9 @@ export function mountWavyAccordion(root, { onSelect = () => {} } = {}) {
       geometry?.dispose();
       material?.dispose();
       renderer?.dispose();
+      root.inert = false;
+      root.classList.remove('wavy-accordion--still');
+      items.forEach(item => item.style.removeProperty('flex-grow'));
       root.setAttribute('data-wavy-accordion-status', 'fallback');
     }
   };

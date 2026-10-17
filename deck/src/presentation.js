@@ -7,13 +7,17 @@ import { createSeminalProjects } from './seminal-projects.js';
 import { isProjectSequence } from './project-sequence.js';
 import { createHopeGallery } from './hope-gallery.js';
 import { createSpaceOpportunities } from './space-opportunities.js';
+import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js';
 
 const $ = selector => document.querySelector(selector);
 const scenes = [...document.querySelectorAll('.scene')];
+const sceneIds = scenes.map(scene => scene.dataset.compositionId);
 const stage = $('#stage');
 const gsap = window.gsap;
 const arcs = mountArcTransition(stage);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+const phone = matchMedia('(max-width: 900px)');
+const sceneStorageKey = `rbb:last-scene:${location.pathname}`;
 const state = { index: 0, transitioning: false, motion: !reduced.matches, autoplay: false, mode: 'live' };
 const sheet = $('#presentation-sheet') || document.createElement('div');
 if (!sheet.isConnected) { sheet.id = 'presentation-sheet'; stage.before(sheet); }
@@ -21,27 +25,28 @@ for (const element of [stage, $('#deck-chrome'), $('#slide-navigation')]) if (el
 const nav = $('#slide-navigation');
 const timelines = window.__timelines ||= {};
 const focus = { value: 0 };
-let art, projectField, artworks = [], museumMenu, officeAccordion, officeAccordionPromise;
+let art, artPromise, projectField, projectFieldPromise, artworks = [], museumMenu, officeAccordion, officeAccordionPromise;
+let initialized = false, pendingExternalScene = null, fieldGeneration = 0;
 let queue = null, navigationTarget = 0, autoTimer, transition, menuBusy = false;
 let menuWanted = false, menuGeneration = 0, menuPromise = Promise.resolve(true), menuSheetTween;
 const isProjectCover = scene => scene?.dataset.compositionId === 'invitation-cover';
 const isCollection = scene => scene?.dataset.compositionId === 'collection';
-const normalizeSceneId = id => id === 'projects-industry-continued' ? 'projects-industry' : id;
 const isOverlay = () => !$('#overview').hidden || !!document.querySelector('dialog[open]');
-const moving = () => state.motion && !reduced.matches && !document.hidden && !isOverlay();
+const moving = () => state.motion && !phone.matches && !reduced.matches && !document.hidden && !isOverlay();
 const seminalProjects = createSeminalProjects({ onOpen: pauseForOverlay, onClose: refreshMotion });
 const hopeGallery = createHopeGallery();
 const spaceOpportunities = createSpaceOpportunities({ onNavigate: go, onOpen: pauseForOverlay, onClose: refreshMotion });
 
 function resize() {
  const root = document.documentElement, width = root.clientWidth, height = root.clientHeight;
- const scale = Math.min(width / 1920, height / 1080);
+ const scale = phone.matches ? 1 : Math.min(width / 1920, height / 1080);
+ root.classList.toggle('mobile-deck', phone.matches);
  root.style.setProperty('--scale', scale);
  root.style.setProperty('--stage-width', `${width / scale}px`);
  root.style.setProperty('--stage-height', `${height / scale}px`);
- root.style.setProperty('--content-left', `${(width / scale - 1920) / 2}px`);
- root.style.setProperty('--content-top', `${(height / scale - 1080) / 2}px`);
- root.style.setProperty('--bleed-scale', Math.max(width / 1920, height / 1080) / scale);
+ root.style.setProperty('--content-left', `${phone.matches ? 0 : (width / scale - 1920) / 2}px`);
+ root.style.setProperty('--content-top', `${phone.matches ? 0 : (height / scale - 1080) / 2}px`);
+ root.style.setProperty('--bleed-scale', phone.matches ? 1 : Math.max(width / 1920, height / 1080) / scale);
  if (!state.transitioning && scenes[state.index]?.classList.contains('active') && !isOverlay()) {
   seminalProjects.activate(scenes[state.index], { motion: moving() });
  }
@@ -80,10 +85,39 @@ function updateChrome() {
  }
  museumMenu?.setIndex(state.index);
 }
+// Keep both large cover fields dormant until their scene is actually requested.
+// Restoring a later phone slide should not decode a second, hidden image field.
+function prepareCover(scene) {
+ const generation = fieldGeneration;
+ if (isProjectCover(scene)) {
+  projectFieldPromise ||= mountProjectField($('#project-field'))
+   .then(field => {
+    if (generation !== fieldGeneration) { field.dispose(); return; }
+    projectField = field; if (scenes[state.index] === scene && scene.classList.contains('active')) startAmbient(scene);
+   })
+   .catch(error => { console.warn('Project cover unavailable.', error); if (generation === fieldGeneration) projectFieldPromise = null; });
+  return projectFieldPromise;
+ }
+ if (isCollection(scene)) {
+  artPromise ||= (async () => {
+   const response = await fetch('assets/art/manifest.json');
+   if (!response.ok) throw new Error('The artwork catalogue could not be loaded.');
+   const manifest = await response.json();
+   if (generation !== fieldGeneration) return;
+   artworks = manifest;
+   art = mountArtField($('#art-field'), artworks, { onSelect: openArt });
+   if (scenes[state.index] === scene && scene.classList.contains('active')) startAmbient(scene);
+  })().catch(error => { console.warn('Artwork field unavailable.', error); if (generation === fieldGeneration) artPromise = null; });
+  return artPromise;
+ }
+ return Promise.resolve();
+}
 async function prepareScene(scene) {
- await Promise.all([hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
+ await Promise.allSettled([prepareCover(scene), hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
  if (scene.dataset.compositionId === 'office-art') {
+  const generation = fieldGeneration;
   if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js').then(async ({ mountWavyAccordion }) => {
+   if (generation !== fieldGeneration) return null;
    const root = scene.querySelector('[data-wavy-accordion-init]');
    officeAccordion = mountWavyAccordion(root, { onSelect: index => openOfficePhoto(root, index) });
    await officeAccordion.ready;
@@ -91,7 +125,7 @@ async function prepareScene(scene) {
   });
   await officeAccordionPromise;
  }
- if (scene.matches('.source-art-pair,.hope-plaza,.seminal-projects,.invitation-cover')) {
+ if (!phone.matches && scene.matches('.source-art-pair,.hope-plaza,.seminal-projects,.invitation-cover')) {
   // Incoming slides are still hidden; start lazy image requests explicitly
   // before waiting for decode so preparation cannot wait on visibility.
   await Promise.allSettled([...scene.querySelectorAll('img')].map(image => { image.loading = 'eager'; return image.decode(); }));
@@ -105,7 +139,7 @@ function stopAmbient(scene) {
 }
 function startAmbient(scene) {
  projectField?.setMotion(moving() && state.mode === 'live');
- projectField?.setActive(isProjectCover(scene) && moving() && state.mode === 'live');
+ projectField?.setActive(isProjectCover(scene) && (phone.matches || moving()) && state.mode === 'live');
  if (scene.dataset.compositionId === 'office-art') {
   officeAccordion?.setMotion(moving() && state.mode === 'live');
   officeAccordion?.setActive(true);
@@ -113,7 +147,7 @@ function startAmbient(scene) {
  const collection = isCollection(scene);
  if ($('#art-field')) { $('#art-field').inert = !collection; $('#art-field').setAttribute('aria-hidden', String(!collection)); $('#art-field').style.opacity = collection ? '1' : '0'; }
  art?.setMotion(moving() && state.mode === 'live');
- art?.setActive(collection && moving() && state.mode === 'live');
+ art?.setActive(collection && (phone.matches || moving()) && state.mode === 'live');
  seminalProjects.activate(scene, { motion: moving() && state.mode === 'live' });
  hopeGallery.activate(scene, { motion: moving() && state.mode === 'live' });
  spaceOpportunities.activate(scene, { motion: moving() && state.mode === 'live' });
@@ -136,6 +170,39 @@ function scheduleAuto() {
   }, Number(scenes[state.index].dataset.duration) * 1000);
  }
 }
+function validSceneId(value) { return validateSceneId(value, sceneIds); }
+function sceneFromHash() { return parseSceneHash(location.hash, sceneIds); }
+function savedSceneId() {
+ try { return validSceneId(sessionStorage.getItem(sceneStorageKey)); } catch { return null; }
+}
+function rememberScene(scene, { notify = true } = {}) {
+ const id = scene?.dataset.compositionId;
+ if (!id || state.mode !== 'live') return;
+ try { sessionStorage.setItem(sceneStorageKey, id); } catch { /* Private browsing may restrict storage. */ }
+ const url = new URL(location.href); url.hash = id;
+ history.replaceState(null, '', url);
+ // The public page hosts this deck in an iframe. Sync its URL as well so an
+ // iOS tab reload or a shared link returns to the same place in the invitation.
+ if (notify && parent !== window && location.origin !== 'null') {
+  parent.postMessage({ type: 'RBB_SCENE', scene: id }, location.origin);
+ }
+}
+function externalNavigation(id) {
+ const sceneId = validSceneId(id);
+ if (!sceneId) return;
+ pendingExternalScene = sceneId;
+ if (initialized) go(sceneId);
+}
+addEventListener('hashchange', () => externalNavigation(sceneFromHash()));
+addEventListener('message', event => {
+ const sceneId = navigationSceneFromMessage(event, { parentWindow: parent, ownWindow: window, origin: location.origin, sceneIds });
+ if (sceneId) externalNavigation(sceneId);
+});
+addEventListener('pagehide', () => {
+ rememberScene(scenes[state.transitioning ? navigationTarget : state.index], { notify: false });
+ stopAmbient(scenes[state.index]); clearTimeout(autoTimer);
+});
+addEventListener('pageshow', event => { if (event.persisted && initialized) { resize(); refreshMotion(); } });
 function stepBy(delta) { return go((queue ?? (state.transitioning ? navigationTarget : state.index)) + delta); }
 async function go(index, { instant = false, seek = false } = {}) {
  if (typeof index === 'string' && !/^\d+$/.test(index)) {
@@ -146,22 +213,30 @@ async function go(index, { instant = false, seek = false } = {}) {
  index = Math.max(0, Math.min(scenes.length - 1, Number(index)));
  if (!Number.isFinite(index)) return;
  if (state.transitioning) { queue = index; return; }
- if (index === state.index && scenes[index].classList.contains('active')) return;
+ if (index === state.index && scenes[index].classList.contains('active')) { if (!seek) rememberScene(scenes[index]); return; }
  navigationTarget = index;
  state.transitioning = true;
  clearTimeout(autoTimer);
  const from = scenes[state.index], to = scenes[index], direction = index >= state.index ? 1 : -1;
  stopAmbient(from);
  gsap.set(to, { opacity: 0 });
- await prepareScene(to);
+ // Phone navigation must remain usable on a slow connection. Content can finish
+ // loading after the slide appears; failed optional media cannot lock Next.
+ const preparation = prepareScene(to).catch(error => console.warn('Optional slide media unavailable.', error));
+ if (phone.matches) {
+  let timeout;
+  await Promise.race([preparation, new Promise(resolve => { timeout = setTimeout(resolve, 2000); })]);
+  clearTimeout(timeout);
+ } else await preparation;
  const hasFrom = from.classList.contains('active');
  state.index = index; updateChrome();
- const animate = !instant && !reduced.matches && state.motion && state.mode === 'live';
+ const animate = !instant && !phone.matches && !reduced.matches && state.motion && state.mode === 'live';
  const mapMorph = spaceOpportunities.beginTransition(from, to, { duration: SCENE_MOTION.duration, motion: animate && hasFrom });
  const useProjectSequence = animate && hasFrom && isProjectSequence(from, to);
  if (!useProjectSequence) seminalProjects.settle(to);
  const arc = animate && !useProjectSequence ? arcs.begin(to, { direction, curve: 12 }) : null;
  to.classList.add('active'); to.inert = false; to.setAttribute('aria-hidden', 'false');
+ if (phone.matches) to.scrollTop = 0;
  from.inert = true; from.style.pointerEvents = 'none';
  to.style.zIndex = '3'; from.style.zIndex = '2';
  timelines[to.dataset.compositionId].progress(1).pause();
@@ -204,7 +279,7 @@ async function go(index, { instant = false, seek = false } = {}) {
  }
  gsap.set(to, { clearProps: 'opacity,zIndex,pointerEvents' }); to.inert = false;
  state.transitioning = false; startAmbient(to);
- if (!seek) { history.replaceState(null, '', `#${to.dataset.compositionId}`); scheduleAuto(); }
+ if (!seek) { rememberScene(to); scheduleAuto(); }
  if (queue !== null) { const target = queue; queue = null; if (target !== state.index) go(target); }
 }
 function pauseForOverlay() { stopAmbient(scenes[state.index]); clearTimeout(autoTimer); }
@@ -216,7 +291,7 @@ function setOverviewOpen(wanted) {
  const menuMotion = wanted ? museumMenu.open() : museumMenu.close();
  menuSheetTween?.kill();
  const sheetMotion = new Promise(resolve => {
-  menuSheetTween = gsap.to(sheet, { yPercent: wanted ? -100 : 0, duration: reduced.matches ? 0 : 1.2, ease: 'power3.inOut', onComplete: () => resolve(true), onInterrupt: () => resolve(false) });
+  menuSheetTween = gsap.to(sheet, { yPercent: wanted ? -100 : 0, duration: phone.matches || reduced.matches ? 0 : 1.2, ease: 'power3.inOut', onComplete: () => resolve(true), onInterrupt: () => resolve(false) });
  });
  menuPromise = Promise.all([menuMotion, sheetMotion]).then(() => {
   if (generation !== menuGeneration) return false;
@@ -277,19 +352,43 @@ addEventListener('keydown', event => {
  if (event.key.toLowerCase() === 'm' && !event.repeat) { state.motion = !state.motion; refreshMotion(); }
 });
 let touch;
+const swipeControl = 'canvas,button,a,input,select,textarea,[role="tablist"],[data-wavy-accordion-init],dialog';
 stage.addEventListener('touchstart', event => {
- if (event.target.closest('canvas,button,a,[data-wavy-accordion-init]')) return;
- touch = { x: event.touches[0].clientX, y: event.touches[0].clientY };
-}, { passive: true });
-stage.addEventListener('touchend', event => {
- if (!touch) return;
- const dx = event.changedTouches[0].clientX - touch.x, dy = event.changedTouches[0].clientY - touch.y;
  touch = null;
- if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.8) stepBy(dx < 0 ? 1 : -1);
+ if (event.touches.length !== 1 || state.transitioning || isOverlay() || event.target.closest(swipeControl)) return;
+ const point = event.touches[0], scene = scenes[state.index];
+ // Leave the browser's edge gestures alone and never reuse an old gesture.
+ if (phone.matches && (point.clientX < 24 || point.clientX > innerWidth - 24)) return;
+ touch = { id: point.identifier, x: point.clientX, y: point.clientY, scene, scrollTop: scene.scrollTop, started: performance.now() };
+}, { passive: true });
+stage.addEventListener('touchmove', event => {
+ if (!touch) return;
+ const point = [...event.touches].find(point => point.identifier === touch.id);
+ if (!point || event.touches.length !== 1 || Math.abs(point.clientY - touch.y) > 24 || touch.scene.scrollTop !== touch.scrollTop) touch = null;
+}, { passive: true });
+stage.addEventListener('touchcancel', () => { touch = null; }, { passive: true });
+stage.addEventListener('touchend', event => {
+ const gesture = touch; touch = null;
+ if (!gesture || state.transitioning || isOverlay()) return;
+ const point = [...event.changedTouches].find(point => point.identifier === gesture.id);
+ if (!point || scenes[state.index] !== gesture.scene || gesture.scene.scrollTop !== gesture.scrollTop || performance.now() - gesture.started > 1200) return;
+ const dx = point.clientX - gesture.x, dy = point.clientY - gesture.y;
+ if (Math.abs(dx) > (phone.matches ? 72 : 60) && Math.abs(dx) > Math.abs(dy) * 2.5) stepBy(dx < 0 ? 1 : -1);
 }, { passive: true });
 document.addEventListener('space-opportunity-change', updateChrome);
 document.addEventListener('visibilitychange', refreshMotion);
 reduced.addEventListener('change', () => { state.motion = !reduced.matches; refreshMotion(); });
+phone.addEventListener('change', async () => {
+ // Cover fields and the office gallery choose their renderer at mount time.
+ // Recreate only these small, mode-dependent views when crossing the breakpoint.
+ fieldGeneration++;
+ projectField?.dispose(); projectField = null; projectFieldPromise = null;
+ art?.dispose(); art = null; artPromise = null;
+ officeAccordion?.dispose(); officeAccordion = null; officeAccordionPromise = null;
+ resize(); refreshMotion();
+ await prepareScene(scenes[state.index]).catch(error => console.warn('Resized slide media unavailable.', error));
+ if (!state.transitioning) refreshMotion();
+});
 addEventListener('fullscreenchange', () => { setText('#fullscreen-button', document.fullscreenElement ? 'Exit full screen' : 'Full screen'); resize(); });
 let quietTimer;
 addEventListener('pointermove', () => {
@@ -311,18 +410,11 @@ async function seekTime(time) {
 }
 addEventListener('hf-seek', event => { const promise = seekTime(Number(event.detail?.time) || 0); event.detail?.waitUntil?.(promise); });
 const ready = (async () => {
- const projectReady = mountProjectField($('#project-field')).then(field => { projectField = field; }).catch(error => console.warn(error));
- try {
-  const response = await fetch('assets/art/manifest.json');
-  if (!response.ok) throw new Error('The artwork catalogue could not be loaded.');
-  artworks = await response.json();
-  art = mountArtField($('#art-field'), artworks, { onSelect: openArt });
-  $('#art-field').removeAttribute('aria-hidden');
- } catch (error) { console.warn(error); }
- await projectReady;
- const hash = normalizeSceneId(decodeURIComponent(location.hash.slice(1)));
- const initial = scenes.findIndex(scene => scene.dataset.compositionId === hash);
- await go(initial < 0 ? 0 : initial, { instant: reduced.matches });
+ const initialId = pendingExternalScene || initialSceneId(location.hash, savedSceneId(), sceneIds);
+ const initial = scenes.findIndex(scene => scene.dataset.compositionId === initialId);
+ await go(initial < 0 ? 0 : initial, { instant: phone.matches || reduced.matches });
+ initialized = true;
+ if (pendingExternalScene && pendingExternalScene !== scenes[state.index].dataset.compositionId) await go(pendingExternalScene);
  return true;
 })();
 window.rbbDeck = {

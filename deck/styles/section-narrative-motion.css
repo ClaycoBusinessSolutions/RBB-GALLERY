@@ -1,0 +1,16 @@
+/* Chapter titles have a clearer presence above the centered narrative. */
+.section-divider h2{font-size:46px!important;line-height:1.2!important;letter-spacing:-.015em!important;margin:0 0 40px;font-weight:400}
+.section-divider .keep-words{white-space:nowrap!important}
+.section-divider__copy.section-narrative--revealing{position:relative}
+.section-narrative__source{display:block}
+.section-narrative--revealing>.section-narrative__source{opacity:0}
+.section-narrative__lines{position:absolute;inset:0;display:block;pointer-events:none;text-align:inherit}
+.section-narrative__line{display:block;overflow:hidden;overflow:clip;white-space:nowrap;line-height:inherit}
+.section-narrative__line-text{display:block;will-change:transform,opacity}
+@media(max-width:900px){
+  .section-divider h2{font-size:clamp(22px,5.5vw,28px)!important;line-height:1.2!important;letter-spacing:-.015em!important;margin:0 0 28px}
+}
+@media(prefers-reduced-motion:reduce){
+  .section-narrative--revealing>.section-narrative__source{opacity:1}
+  .section-narrative__lines{display:none}
+}

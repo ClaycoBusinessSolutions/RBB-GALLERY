@@ -27,7 +27,7 @@ function shuffle(items) {
 
 // Two native-image tracks expose more of the collection on phones. Only the
 // tracks animate; thumbnail assets and repeated sequences keep the loop bounded.
-function mountPhoneArtField(host, items, { onSelect } = {}) {
+function mountPhoneArtField(host, items, { onSelect, variedSizes = false } = {}) {
   const root = document.createElement('div');
   root.className = 'rbb-art-field rbb-art-field--mobile';
   root.dataset.count = String(items.length);
@@ -61,6 +61,14 @@ function mountPhoneArtField(host, items, { onSelect } = {}) {
         // supplies the accessible controls, with the same selection on either copy.
         const card = document.createElement(onSelect && !copy ? 'button' : 'div');
         card.className = 'rbb-art-field__card';
+        if (variedSizes) {
+          // Repeat the same irregular rhythm in each loop copy, so the seam is invisible.
+          const rhythm = (index + rowIndex * 3) % 6;
+          card.style.setProperty('--cover-card-width', [.72,1.05,.86,1.18,.64,.98][rhythm]);
+          card.style.setProperty('--cover-card-height', [.68,.94,.8,1,.62,.88][rhythm]);
+          card.style.setProperty('--cover-card-offset', `${[-8,0,12,0,9,-12][rhythm]}px`);
+          card.style.setProperty('--cover-card-gap', `${[8,20,0,12,6,18][rhythm]}px`);
+        }
         if (onSelect) {
           if (!copy) card.type = 'button';
           card.dataset.interactive = 'true';
@@ -99,10 +107,10 @@ function mountPhoneArtField(host, items, { onSelect } = {}) {
   };
 }
 
-export function mountArtField(host, artworks, { onSelect } = {}) {
+export function mountArtField(host, artworks, { onSelect, variedSizes = false } = {}) {
   if (!host?.append) throw new TypeError('mountArtField requires a host element.');
   const items = shuffle((Array.isArray(artworks) ? artworks : []).filter(a => a?.card_src || a?.src));
-  if (window.matchMedia('(max-width: 900px)').matches) return mountPhoneArtField(host, items, { onSelect });
+  if (window.matchMedia('(max-width: 900px)').matches) return mountPhoneArtField(host, items, { onSelect, variedSizes });
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let active = false, motion = true, disposed = false, time = 0, focus = 0, frame = 0, stamp = 0;
   const root = document.createElement('div');
@@ -148,6 +156,12 @@ export function mountArtField(host, artworks, { onSelect } = {}) {
       speed: [12, 18, 25][plane],
       opacity: [.84, .96, 1][plane],
     };
+    if (variedSizes) {
+      const rhythm = index % 6, scale = [.72,1.16,.9,1.26,.8,1.04][rhythm];
+      card.width *= scale; card.maxHeight *= scale;
+      card.y += [-28,16,36,-12,25,-36][rhythm];
+      card.x += [0,38,-28,22,-20,12][rhythm];
+    }
     if (onSelect) el.addEventListener('click', () => { if (card.item) onSelect(card.item); });
     return card;
   });

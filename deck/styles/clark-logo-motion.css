@@ -1,0 +1,8 @@
+/* The wrapper occupies the existing logo box on both phone and desktop. */
+.clark-logo-motion{position:relative;display:block;width:100%;height:100%}
+.clark-logo-motion__overlay{position:absolute;inset:0;display:block;pointer-events:none}
+.clark-logo-motion__overlay[hidden]{display:none}
+.clark-logo-motion__overlay>svg{display:block;width:100%;height:100%;overflow:visible}
+.clark-logo-motion__frame{transform-box:fill-box}
+.clark-logo-motion__lettering{transform-box:view-box;transform-origin:center}
+@media(prefers-reduced-motion:reduce){.clark-logo-motion__overlay{display:none}}

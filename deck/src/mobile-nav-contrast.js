@@ -8,16 +8,21 @@ export function mountMobileNavContrast({ nav, stage, phone }) {
   const ignored = 'script,style,noscript,template,[data-phone-exit-snapshot]';
   let frame = 0, disposed = false, dirty = true, scene = null, candidates = [];
   let intersections = [], observedKey = '', observedTargets = [];
+  let wasActive = false;
 
   const rect = box => ({ left: box.left, top: box.top, right: box.right, bottom: box.bottom });
   const intersects = (a, b) => a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
   const intersect = (a, b) => ({ left: Math.max(a.left, b.left), top: Math.max(a.top, b.top), right: Math.min(a.right, b.right), bottom: Math.min(a.bottom, b.bottom) });
   const nonempty = box => box.right > box.left && box.bottom > box.top;
 
-  function refresh() {
-    if (!disposed && !frame) frame = requestAnimationFrame(measure);
+  function refresh({ immediate = false } = {}) {
+    if (disposed) return;
+    if (immediate) {
+      cancelAnimationFrame(frame); frame = 0;
+      measure(true);
+    } else if (!frame) frame = requestAnimationFrame(() => measure());
   }
-  function invalidate() { dirty = true; refresh(); }
+  function invalidate(options) { dirty = true; refresh(options); }
   function clearIntersections() {
     intersections.forEach(observer => observer.disconnect());
     intersections = []; observedKey = ''; observedTargets = [];
@@ -70,11 +75,15 @@ export function mountMobileNavContrast({ nav, stage, phone }) {
     }
   }
 
-  function measure() {
+  function measure(immediate = false) {
     frame = 0;
     const nextScene = [...stage.querySelectorAll('.scene.active')].find(element => !element.inert);
     const active = phone.matches && !document.hidden && !nav.hidden && !nav.inert &&
       !stage.closest('[inert]') && !stage.classList.contains('mobile-transitioning');
+    // First paint and the end of a page transition must already have the right
+    // contrast. Only subsequent movement within that page should fade the veil.
+    const instant = immediate || !active || !wasActive || nextScene !== scene;
+    wasActive = active;
     if (dirty || nextScene !== scene) collect(nextScene);
     const hits = controls.map(() => false);
     if (active && scene) {
@@ -128,6 +137,7 @@ export function mountMobileNavContrast({ nav, stage, phone }) {
       watchMovement(boxes);
     } else clearIntersections();
     // Commit after every geometry/style read, keeping scroll handling batched.
+    nav.toggleAttribute('data-contrast-instant', instant);
     controls.forEach((control, index) => {
       const value = String(hits[index]);
       if (control.dataset.contentBehind !== value) control.dataset.contentBehind = value;
@@ -144,20 +154,22 @@ export function mountMobileNavContrast({ nav, stage, phone }) {
   const navMutation = new MutationObserver(refresh);
   navMutation.observe(nav, { attributes: true, attributeFilter: ['hidden', 'inert'] });
   stage.addEventListener('scroll', refresh, { capture: true, passive: true, signal: events.signal });
-  stage.addEventListener('load', refresh, { capture: true, signal: events.signal });
+  // A newly decoded image and its contrast veil enter on the same paint. Run
+  // after image onload handlers, which may restore the image's opacity.
+  stage.addEventListener('load', () => queueMicrotask(() => refresh({ immediate: true })), { capture: true, signal: events.signal });
   stage.addEventListener('transitionend', refresh, { capture: true, signal: events.signal });
   stage.addEventListener('animationend', refresh, { capture: true, signal: events.signal });
   window.addEventListener('resize', refresh, { passive: true, signal: events.signal });
   window.visualViewport?.addEventListener('resize', refresh, { passive: true, signal: events.signal });
   document.addEventListener('visibilitychange', refresh, { signal: events.signal });
   phone.addEventListener('change', invalidate, { signal: events.signal });
-  document.fonts?.ready.then(refresh);
-  refresh();
+  document.fonts?.ready.then(() => refresh({ immediate: true }));
+  refresh({ immediate: true });
   return {
     refresh: invalidate,
     dispose() {
       disposed = true; cancelAnimationFrame(frame); events.abort(); mutation.disconnect(); navMutation.disconnect(); resize.disconnect();
-      clearIntersections(); controls.forEach(control => delete control.dataset.contentBehind);
+      clearIntersections(); nav.removeAttribute('data-contrast-instant'); controls.forEach(control => delete control.dataset.contentBehind);
     },
   };
 }

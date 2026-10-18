@@ -170,3 +170,31 @@
   #slide-navigation #nav-prev,#slide-navigation #nav-next{padding:10px!important}
   .slide-navigation__steps{gap:7px}
 }
+
+/* Neutral glass belongs only to the three controls, never to a footer bar. */
+@media(max-width:900px){
+  #slide-navigation #nav-menu,
+  #slide-navigation #nav-prev,
+  #slide-navigation #nav-next{
+    background:rgba(255,255,255,.76)!important;
+    -webkit-backdrop-filter:blur(12px) grayscale(1);
+    backdrop-filter:blur(12px) grayscale(1);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),0 2px 12px rgba(0,0,0,.06);
+  }
+  #slide-navigation #nav-menu{border-radius:999px}
+  #slide-navigation #nav-prev,#slide-navigation #nav-next{width:48px;height:48px;flex:0 0 48px;border-radius:50%}
+  #slide-navigation[data-theme="dark"] #nav-menu,
+  #slide-navigation[data-theme="dark"] #nav-prev,
+  #slide-navigation[data-theme="dark"] #nav-next{
+    background:rgba(0,0,0,.65)!important;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 2px 12px rgba(0,0,0,.08);
+  }
+  @supports ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+    #slide-navigation #nav-menu,
+    #slide-navigation #nav-prev,
+    #slide-navigation #nav-next{background:rgba(255,255,255,.24)!important}
+    #slide-navigation[data-theme="dark"] #nav-menu,
+    #slide-navigation[data-theme="dark"] #nav-prev,
+    #slide-navigation[data-theme="dark"] #nav-next{background:rgba(0,0,0,.22)!important}
+  }
+}

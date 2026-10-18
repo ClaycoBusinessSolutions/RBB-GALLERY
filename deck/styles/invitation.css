@@ -52,3 +52,8 @@
 #slide-navigation .nav-arrow{display:block;flex:none;width:24px;height:24px;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 
 #slide-navigation .nav-arrow__chevron{display:none}
+
+/* Vector arrows cannot be substituted with platform emoji artwork. */
+.line-arrow{display:inline-block;width:1em;height:1em;vertical-align:-.12em;fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.project-cover .line-arrow,.clark-cover .line-arrow{color:#fff}
+.project-cover .invitation-cover__begin .line-arrow,.clark-cover .begin .line-arrow{width:20px;height:20px}

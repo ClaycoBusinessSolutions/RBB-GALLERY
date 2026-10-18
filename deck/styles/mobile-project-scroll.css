@@ -1,0 +1,15 @@
+/* A single scrolling market on phones, with the cue inside navigation. */
+.project-scroll-hint{display:none}
+@media (max-width:900px) {
+  .seminal-projects--stream.scene{overflow:hidden}
+  .project-stream.project-stream--mobile{box-sizing:border-box;height:calc(100% - 72px - env(safe-area-inset-bottom))!important;min-height:0!important;overflow-x:hidden!important;overflow-y:auto!important;padding-bottom:32px;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .project-stream--mobile::-webkit-scrollbar{display:none}
+  .project-stream--mobile .project-stream__track{padding:0;will-change:auto}
+  .project-stream--mobile .project-stream__market[hidden]{display:none!important}
+  #slide-navigation .project-scroll-hint{display:flex;margin:0 auto;opacity:.75}
+  #slide-navigation .project-scroll-hint[hidden]{display:none!important}
+  .project-scroll-hint svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;animation:project-scroll-nudge 1.8s ease-in-out infinite}
+  .project-scroll-hint[data-motion="paused"] svg{animation-play-state:paused}
+  @keyframes project-scroll-nudge{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
+}
+@media(prefers-reduced-motion:reduce){.project-scroll-hint svg{animation:none}}

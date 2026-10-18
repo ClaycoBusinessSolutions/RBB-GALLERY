@@ -1,4 +1,4 @@
-const BUILD="d760ceaf1131a5a096e5";
+const BUILD="c19696f3a22b927e9f04";
 const root=new URL('./',location.href),frame=document.querySelector('iframe'),status=document.querySelector('[role="status"]');
 let mounted=false;
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));

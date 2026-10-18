@@ -25,8 +25,8 @@ function shuffle(items) {
   return result;
 }
 
-// Six gently drifting native images give both phone covers the same moving
-// backdrop without the desktop's 24 3D layers or a JavaScript frame loop.
+// Two native-image tracks expose more of the collection on phones. Only the
+// tracks animate; thumbnail assets and repeated sequences keep the loop bounded.
 function mountPhoneArtField(host, items, { onSelect } = {}) {
   const root = document.createElement('div');
   root.className = 'rbb-art-field rbb-art-field--mobile';
@@ -40,22 +40,45 @@ function mountPhoneArtField(host, items, { onSelect } = {}) {
   const events = new AbortController();
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let active = false, motion = true, disposed = false;
-  for (const item of items.slice(0, 6)) {
-    const card = document.createElement(onSelect ? 'button' : 'div');
-    card.className = 'rbb-art-field__card';
-    if (onSelect) { card.type = 'button'; card.dataset.interactive = 'true'; }
-    const image = new Image();
-    const dimensions = item.card_dimensions || item.dimensions || {};
-    image.alt = item.alt || `${item.title || 'Artwork'}${item.artist ? ` by ${item.artist}` : ''}`;
-    image.width = dimensions.width || 384; image.height = dimensions.height || 384;
-    image.decoding = 'async'; image.loading = 'lazy'; image.draggable = false;
-    image.src = item.card_src || item.src;
-    card.dataset.artworkId = item.id || '';
-    card.setAttribute('aria-label', image.alt);
-    const drift = document.createElement('span');
-    drift.className = 'rbb-art-field__drift';
-    drift.append(image); card.append(drift); camera.append(card);
-    if (onSelect) card.addEventListener('click', () => onSelect(item), { signal: events.signal });
+  const selected = items.slice(0, 12);
+  root.dataset.mobileCount = String(selected.length);
+  for (let rowIndex = 0; rowIndex < 2 && selected.length; rowIndex++) {
+    const rowItems = selected.filter((_, index) => index % 2 === rowIndex);
+    if (!rowItems.length) rowItems.push(selected[0]);
+    // Even a small manifest must fill the viewport at the loop seam.
+    const sequence = Array.from({ length: Math.max(3, rowItems.length) }, (_, index) => rowItems[index % rowItems.length]);
+    const row = document.createElement('div');
+    row.className = 'rbb-art-field__mobile-row';
+    const track = document.createElement('div');
+    track.className = 'rbb-art-field__mobile-track';
+    row.append(track); camera.append(row);
+    for (let copy = 0; copy < 2; copy++) {
+      const group = document.createElement('div');
+      group.className = 'rbb-art-field__mobile-sequence';
+      if (copy) group.setAttribute('aria-hidden', 'true');
+      for (const [index, item] of sequence.entries()) {
+        // The visual loop copy stays out of the tab order; the first sequence
+        // supplies the accessible controls, with the same selection on either copy.
+        const card = document.createElement(onSelect && !copy ? 'button' : 'div');
+        card.className = 'rbb-art-field__card';
+        if (onSelect) {
+          if (!copy) card.type = 'button';
+          card.dataset.interactive = 'true';
+        }
+        const image = new Image();
+        const dimensions = item.card_dimensions || item.dimensions || {};
+        const label = item.alt || `${item.title || 'Artwork'}${item.artist ? ` by ${item.artist}` : ''}`;
+        image.alt = copy ? '' : label;
+        image.width = dimensions.width || 384; image.height = dimensions.height || 384;
+        image.decoding = 'async'; image.loading = !copy && index < 2 ? 'eager' : 'lazy'; image.draggable = false;
+        image.src = item.card_src || item.src;
+        card.dataset.artworkId = item.id || '';
+        if (!copy) card.setAttribute('aria-label', label);
+        card.append(image); group.append(card);
+        if (onSelect) card.addEventListener('click', () => onSelect(item), { signal: events.signal });
+      }
+      track.append(group);
+    }
   }
   host.append(root);
   function sync() {

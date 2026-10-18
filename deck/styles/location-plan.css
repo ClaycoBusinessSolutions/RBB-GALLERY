@@ -20,16 +20,27 @@
 .location-plan .lp-map-labels{font-family:inherit;fill:#62665e;font-size:24px;letter-spacing:.01em}
 .location-plan .lp-map-labels path{fill:none;stroke:#73776e;stroke-width:1.7}
 .location-plan .lp-map-labels .lp-entrance-label{font-size:26px;fill:var(--lp-ink)}
-.location-plan .lp-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:22px;flex:none}
-.location-plan .lp-location{display:flex;align-items:flex-start;gap:13px;min-width:0;padding:20px 0 16px;text-align:left;color:inherit;background:none;border:0;border-top:1px solid #25262240;border-radius:0;font-family:inherit;cursor:pointer}
-.location-plan .lp-legend-number{color:var(--lp-red);font-size:18px;line-height:1.5;letter-spacing:.02em;flex:none}
+.location-plan .lp-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;margin-top:22px;border-block:1px solid #25262240;flex:none}
+.location-plan .lp-location{display:grid;grid-template-columns:30px minmax(0,1fr) 24px;align-items:start;column-gap:14px;min-width:0;padding:22px 26px;text-align:left;color:inherit;background:none;border:0;border-radius:0;font-family:inherit;cursor:pointer;transition:background-color .2s ease}
+.location-plan .lp-location+.lp-location{border-left:1px solid #25262240}
+.location-plan .lp-legend-number{color:var(--lp-red);font-size:18px;line-height:1.5;letter-spacing:.02em;padding-top:1px}
 .location-plan .lp-legend-copy{display:block;min-width:0}
 .location-plan .lp-legend-name{display:block;font-size:25px;line-height:1.15;letter-spacing:-.025em;white-space:nowrap}
-.location-plan .lp-legend-detail{display:block;font-size:17px;line-height:1.4;color:#65675f;margin-top:10px;max-width:260px}
-.location-plan .lp-legend-arrow{font-size:22px;line-height:1.2;margin-left:auto;padding-left:4px;opacity:.65}
-.location-plan .lp-location:hover,.location-plan .lp-location.is-selected{border-color:var(--lp-red)}
-.location-plan .lp-location:focus-visible{outline:2px solid var(--lp-red);outline-offset:7px}
+.location-plan .lp-legend-detail{display:block;font-size:17px;line-height:1.4;color:#65675f;margin-top:9px;max-width:none}
+.location-plan .lp-legend-arrow{display:block;width:22px;height:22px;margin-top:3px;opacity:.65;transition:transform .2s ease,opacity .2s ease}
+.location-plan .lp-location:hover,.location-plan .lp-location.is-selected{background:#25262206}
+.location-plan .lp-location:hover .lp-legend-arrow,.location-plan .lp-location:focus-visible .lp-legend-arrow{transform:translate(2px,-2px);opacity:1}
+.location-plan .lp-location:focus-visible{outline:2px solid var(--lp-red);outline-offset:-2px}
 .location-plan .lp-source-note{margin:19px 0 0;font-size:16px;line-height:1.4;color:#65675f;letter-spacing:.005em;flex:none}
 .location-plan.lp-static .lp-zone,.location-plan.lp-static .lp-location{cursor:default}
 .location-plan.lp-static .lp-legend-arrow{display:none}
+@media(max-width:900px){
+ .location-plan .lp-legend{grid-template-columns:1fr}
+ .location-plan .lp-location{grid-template-columns:26px minmax(0,1fr) 22px;column-gap:12px;padding:18px 14px}
+ .location-plan .lp-location+.lp-location{border-left:0;border-top:1px solid #25262240}
+ .location-plan .lp-legend-number{font-size:14px;line-height:1.5;padding-top:0}
+ .location-plan .lp-legend-name{white-space:normal}
+ .location-plan .lp-legend-detail{margin-top:6px}
+ .location-plan .lp-legend-arrow{width:19px;height:19px;margin-top:1px}
+}
 @media(prefers-reduced-motion:reduce){.location-plan *{transition:none!important;animation:none!important}}

@@ -23,7 +23,7 @@ const LABELS = {
 };
 
 function loadStyles() {
-  const href = new URL('../museum-menu.css?v=d26af05fb1cc2e070883', import.meta.url).href;
+  const href = new URL('../museum-menu.css?v=81fcaf0d3663d90fa8c2', import.meta.url).href;
   if ([...document.styleSheets].some(sheet => sheet.href === href)) return Promise.resolve();
   let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(item => item.href === href);
   return new Promise(resolve => {
@@ -86,7 +86,7 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
     column.className = 'museum-menu__col';
     const label = document.createElement('p');
     label.className = 'museum-menu__eyebrow';
-    label.textContent = `( ${group.title} )`;
+    label.textContent = group.title;
     const links = document.createElement('div');
     links.className = 'museum-menu__links';
     for (const id of group.ids) {

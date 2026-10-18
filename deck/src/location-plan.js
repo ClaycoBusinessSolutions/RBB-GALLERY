@@ -46,7 +46,7 @@ export function mountLocationPlan(host,{onSelect,gsap=globalThis.gsap}={}) {
         <path d="M1044 711H994"/><text class="lp-entrance-label" x="1060" y="719">Entrance</text>
       </g>
     </svg>
-    <div class="lp-legend" aria-label="Explore the two connected RBB spaces" style="grid-template-columns:repeat(2,minmax(0,1fr))">${ZONES.map(z=>`<button type="button" class="lp-location" data-location="${z.id}" tabindex="-1"><span class="lp-legend-number">${z.number}</span><span class="lp-legend-copy"><span class="lp-legend-name">${z.name}</span><span class="lp-legend-detail">${z.detail}</span></span><span class="lp-legend-arrow" aria-hidden="true">↗</span></button>`).join('')}</div>
+    <div class="lp-legend" role="group" aria-label="Explore the two connected RBB spaces">${ZONES.map(z=>`<button type="button" class="lp-location" data-location="${z.id}" tabindex="-1"><span class="lp-legend-number">${z.number}</span><span class="lp-legend-copy"><span class="lp-legend-name">${z.name}</span><span class="lp-legend-detail">${z.detail}</span></span><svg class="lp-legend-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></button>`).join('')}</div>
     <p class="lp-source-note">Schematic orientation · traced from the exhibition brief, plan diagram 15. Connections are indicative.</p>`;
   const routes=[...host.querySelectorAll('.lp-route')],zones=[...host.querySelectorAll('.lp-zone')],markers=[...host.querySelectorAll('.lp-marker')],legend=[...host.querySelectorAll('.lp-location')];
   const timeline=gsap?.timeline({paused:true})||null;

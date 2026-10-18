@@ -37,6 +37,21 @@
 .hope-gallery__credits{margin-top:24px;font-size:15px}
 .hope-gallery__sources{font-size:15px}
 .hope-gallery__story>.hope-gallery__photo-note{font-size:14px;margin-top:10px}
+/* Closing invitation: one compact hierarchy, followed by three numbered prompts. */
+.collaboration-invitation h2{top:250px}
+.collaboration-invitation .collaboration-invitation__lead{top:390px}
+.collaboration-invitation .collaboration-invitation__questions{top:510px;gap:64px;padding:28px 0 0;margin:0;list-style:none}
+.collaboration-invitation__questions>li{min-width:0}
+.collaboration-invitation__number{display:block;font-size:23px;line-height:1.2;letter-spacing:.02em;font-variant-numeric:tabular-nums;margin:0 0 18px;opacity:.75}
+@media(max-width:900px){
+  .scene.collaboration-invitation .scene-inner{gap:20px}
+  .scene.collaboration-invitation .eyebrow{margin:0 0 8px}
+  .collaboration-invitation .collaboration-invitation__lead{position:static;font-size:21px;line-height:1.4}
+  .collaboration-invitation .collaboration-invitation__questions{position:static;grid-template-columns:1fr;gap:24px;margin-top:12px;padding-top:24px}
+  .collaboration-invitation__questions>li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:14px;align-items:start}
+  .collaboration-invitation__questions .collaboration-invitation__number{font-size:14px;line-height:27px;margin:0}
+  .collaboration-invitation__questions .keep-words{white-space:nowrap!important}
+}
 /* Keep the quiet utility navigation from turning into dark boxes on red. */
 body:has(.section-divider.active) #slide-navigation button,
 body:has(.collaboration-invitation.active) #slide-navigation button{background:transparent}

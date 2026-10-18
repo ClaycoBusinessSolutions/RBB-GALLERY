@@ -73,3 +73,6 @@ dialog p{font-size:15px;line-height:1.5;letter-spacing:.01em;margin-top:23px}
 /* The audience view has no footer; the hidden counter remains for presenter sync. */
 #deck-chrome[hidden]{display:none!important}
 #stage:focus{outline:none}
+
+/* Embedded menu previews show the slide, without presentation controls. */
+html.menu-preview #slide-navigation,html.menu-preview #deck-chrome,html.menu-preview .keyboard-hint,html.menu-preview #overview{display:none!important}

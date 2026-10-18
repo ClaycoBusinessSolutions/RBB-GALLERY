@@ -23,7 +23,7 @@ const LABELS = {
 };
 
 function loadStyles() {
-  const href = new URL('../museum-menu.css?v=6602206c8ffaac6ab19b', import.meta.url).href;
+  const href = new URL('../museum-menu.css?v=4ae5914e049e138b769a', import.meta.url).href;
   if ([...document.styleSheets].some(sheet => sheet.href === href)) return Promise.resolve();
   let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(item => item.href === href);
   return new Promise(resolve => {
@@ -47,6 +47,7 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
   const stylesReady = loadStyles();
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const phone = matchMedia('(max-width: 900px)');
+  const previewAllowed = matchMedia('(min-width: 992px)');
   const controller = new AbortController();
   const signal = controller.signal;
   const original = { html: host.innerHTML, className: host.className, hidden: host.hidden, inert: host.inert, role: host.getAttribute('role'), label: host.getAttribute('aria-label'), modal: host.getAttribute('aria-modal'), ariaHidden: host.getAttribute('aria-hidden') };
@@ -70,6 +71,10 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
       <nav class="museum-menu__links-row" aria-label="Presentation chapters"></nav>
       <div class="museum-menu__logo-row">
         <img class="museum-menu__wordmark" src="assets/brand/clayco-black.svg" width="204" height="51" alt="Clayco">
+        <figure class="museum-menu__preview" aria-hidden="true" hidden>
+          <div class="museum-menu__preview-window"></div>
+          <figcaption class="museum-menu__preview-caption"></figcaption>
+        </figure>
       </div>
     </div>
     <div class="museum-menu__shade" data-footer-parallax-dark aria-hidden="true"></div>`;
@@ -80,6 +85,52 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
   const linksRow = host.querySelector('.museum-menu__links-row');
   const buttons = new Map();
   const sceneList = Array.from(scenes);
+  const preview = host.querySelector('.museum-menu__preview');
+  const previewWindow = host.querySelector('.museum-menu__preview-window');
+  const previewCaption = host.querySelector('.museum-menu__preview-caption');
+  let previewFrame = null, previewTimer = null, previewScene = null, previewLoaded = false;
+  function sizePreview() {
+    if (previewFrame) previewFrame.style.transform = `scale(${previewWindow.clientWidth / 1920})`;
+  }
+  const previewResize = new ResizeObserver(sizePreview);
+  previewResize.observe(previewWindow);
+  function stopPreview() {
+    clearTimeout(previewTimer);
+    previewFrame?.remove(); previewFrame = null; previewLoaded = false; previewScene = null;
+    preview.hidden = true; delete preview.dataset.ready;
+  }
+  function navigatePreview() {
+    if (previewLoaded && previewScene && previewFrame?.contentWindow) {
+      previewFrame.contentWindow.postMessage({ type: 'RBB_NAVIGATE', scene: previewScene }, location.origin);
+    }
+  }
+  function showPreview(index) {
+    if (disposed || !previewAllowed.matches || !['open', 'opening'].includes(phase)) return;
+    const button = buttons.get(index);
+    if (!button) return;
+    previewScene = button.dataset.menuScene;
+    previewCaption.textContent = `${String(index + 1).padStart(2, '0')} / ${button.querySelector('.museum-menu__link-label').textContent}`;
+    preview.hidden = false;
+    if (!previewFrame) {
+      previewFrame = document.createElement('iframe');
+      previewFrame.title = 'Animated slide preview';
+      previewFrame.tabIndex = -1; previewFrame.inert = true;
+      previewFrame.setAttribute('aria-hidden', 'true');
+      const url = new URL(location.href);
+      url.searchParams.set('menu-preview', '1'); url.hash = previewScene;
+      previewFrame.src = url.href;
+      previewFrame.addEventListener('load', () => { previewLoaded = true; navigatePreview(); }, { signal });
+      previewWindow.append(previewFrame); sizePreview();
+    } else navigatePreview();
+  }
+  function requestPreview(index) {
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(() => showPreview(index), 120);
+  }
+  window.addEventListener('message', event => {
+    if (event.origin !== location.origin || event.source !== previewFrame?.contentWindow || event.data?.type !== 'RBB_PREVIEW_SCENE') return;
+    if (event.data.scene === previewScene) preview.dataset.ready = 'true';
+  }, { signal });
 
   for (const group of GROUPS) {
     const column = document.createElement('div');
@@ -110,6 +161,8 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
       button.setAttribute('aria-label', `Slide ${index + 1}: ${fullLabel}`);
       button.append(number, name);
       button.addEventListener('click', () => onSelect?.(index), { signal });
+      button.addEventListener('pointerenter', () => requestPreview(index), { signal });
+      button.addEventListener('focus', () => requestPreview(index), { signal });
       links.append(button);
       buttons.set(index, button);
     }
@@ -225,9 +278,14 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
     if (disposed || phase === 'closed') return Promise.resolve(false);
     if (phase === 'closing') return motionPromise;
     phase = 'closing';
+    stopPreview();
     host.dataset.menuState = phase;
     return animate(false);
   }
+  previewAllowed.addEventListener('change', () => {
+    if (!previewAllowed.matches) stopPreview();
+    else if (phase === 'open') requestPreview(currentIndex);
+  }, { signal });
   phone.addEventListener('change', () => {
     // Finish the requested menu state before changing between overlay and
     // desktop footer motion; no stale phone opacity or translation may remain.
@@ -244,6 +302,7 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
   function dispose() {
     if (disposed) return;
     disposed = true;
+    stopPreview(); previewResize.disconnect();
     stopMotion();
     controller.abort();
     host.innerHTML = original.html;

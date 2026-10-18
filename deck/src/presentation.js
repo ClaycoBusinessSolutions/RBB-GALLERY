@@ -1,16 +1,16 @@
-import { mountArtField } from './art-field.js?v=6602206c8ffaac6ab19b';
-import { mountProjectField } from './project-field.js?v=6602206c8ffaac6ab19b';
-import { mountArcTransition } from './arc-transition.js?v=6602206c8ffaac6ab19b';
-import { mountMuseumMenu } from './museum-menu.js?v=6602206c8ffaac6ab19b';
-import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=6602206c8ffaac6ab19b';
-import { createSeminalProjects } from './seminal-projects.js?v=6602206c8ffaac6ab19b';
-import { isProjectSequence } from './project-sequence.js?v=6602206c8ffaac6ab19b';
-import { createHopeGallery } from './hope-gallery.js?v=6602206c8ffaac6ab19b';
-import { createSpaceOpportunities } from './space-opportunities.js?v=6602206c8ffaac6ab19b';
-import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=6602206c8ffaac6ab19b';
-import { mountMobileNavContrast } from './mobile-nav-contrast.js?v=6602206c8ffaac6ab19b';
-import { createClarkLogoMotion } from './clark-logo-motion.js?v=6602206c8ffaac6ab19b';
-import { createSectionNarrativeMotion } from './section-narrative-motion.js?v=6602206c8ffaac6ab19b';
+import { mountArtField } from './art-field.js?v=4ae5914e049e138b769a';
+import { mountProjectField } from './project-field.js?v=4ae5914e049e138b769a';
+import { mountArcTransition } from './arc-transition.js?v=4ae5914e049e138b769a';
+import { mountMuseumMenu } from './museum-menu.js?v=4ae5914e049e138b769a';
+import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=4ae5914e049e138b769a';
+import { createSeminalProjects } from './seminal-projects.js?v=4ae5914e049e138b769a';
+import { isProjectSequence } from './project-sequence.js?v=4ae5914e049e138b769a';
+import { createHopeGallery } from './hope-gallery.js?v=4ae5914e049e138b769a';
+import { createSpaceOpportunities } from './space-opportunities.js?v=4ae5914e049e138b769a';
+import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=4ae5914e049e138b769a';
+import { mountMobileNavContrast } from './mobile-nav-contrast.js?v=4ae5914e049e138b769a';
+import { createClarkLogoMotion } from './clark-logo-motion.js?v=4ae5914e049e138b769a';
+import { createSectionNarrativeMotion } from './section-narrative-motion.js?v=4ae5914e049e138b769a';
 
 const $ = selector => document.querySelector(selector);
 const scenes = [...document.querySelectorAll('.scene')];
@@ -20,6 +20,8 @@ const gsap = window.gsap;
 const arcs = mountArcTransition(stage);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const phone = matchMedia('(max-width: 900px)');
+const menuPreview = new URLSearchParams(location.search).get('menu-preview') === '1';
+document.documentElement.classList.toggle('menu-preview', menuPreview);
 const sceneStorageKey = `rbb:last-scene:${location.pathname}`;
 const state = { index: 0, transitioning: false, motion: !reduced.matches, autoplay: false, mode: 'live' };
 const sheet = $('#presentation-sheet') || document.createElement('div');
@@ -42,7 +44,7 @@ const moving = () => !phone.matches && transitionMotion();
 const seminalProjects = createSeminalProjects({ onOpen: pauseForOverlay, onClose: refreshMotion });
 const hopeGallery = createHopeGallery();
 const spaceOpportunities = createSpaceOpportunities({ onNavigate: go, onOpen: pauseForOverlay, onClose: refreshMotion });
-const clarkLogoMotion = createClarkLogoMotion($('.clark-brandmark'));
+const clarkLogoMotions = new Map(scenes.filter(scene => scene.querySelector('.clark-brandmark')).map(scene => [scene, createClarkLogoMotion(scene.querySelector('.clark-brandmark'))]));
 const sectionNarrativeMotion = createSectionNarrativeMotion();
 
 function resize() {
@@ -121,15 +123,15 @@ function prepareCover(scene) {
    art = mountArtField($('#art-field'), artworks, { onSelect: openArt });
    if (scenes[state.index] === scene && scene.classList.contains('active')) startAmbient(scene);
   })().catch(error => { console.warn('Artwork field unavailable.', error); if (generation === fieldGeneration) artPromise = null; });
-  return Promise.all([artPromise, clarkLogoMotion.ready]);
+  return artPromise;
  }
  return Promise.resolve();
 }
 async function prepareScene(scene) {
- await Promise.allSettled([prepareCover(scene), hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
+ await Promise.allSettled([prepareCover(scene), clarkLogoMotions.get(scene)?.ready, hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
  if (scene.dataset.compositionId === 'office-art') {
   const generation = fieldGeneration;
-  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=6602206c8ffaac6ab19b').then(async ({ mountWavyAccordion }) => {
+  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=4ae5914e049e138b769a').then(async ({ mountWavyAccordion }) => {
    if (generation !== fieldGeneration) return null;
    const root = scene.querySelector('[data-wavy-accordion-init]');
    officeAccordion = mountWavyAccordion(root, { onSelect: index => openOfficePhoto(root, index) });
@@ -145,7 +147,7 @@ async function prepareScene(scene) {
  }
 }
 function stopAmbient(scene) {
- clarkLogoMotion.pause(); sectionNarrativeMotion.pause();
+ clarkLogoMotions.forEach(logo => logo.pause()); sectionNarrativeMotion.pause();
  if (isProjectCover(scene)) projectField?.setActive(false);
  if (scene?.dataset.compositionId === 'office-art') officeAccordion?.setActive(false);
  if (isCollection(scene)) { art?.setActive(false); }
@@ -159,19 +161,19 @@ function startAmbient(scene) {
   officeAccordion?.setActive(true);
  }
  const collection = isCollection(scene);
- clarkLogoMotion.setMotion(transitionMotion());
- if (collection) clarkLogoMotion.resume();
+ clarkLogoMotions.forEach(logo => logo.setMotion(transitionMotion()));
+ clarkLogoMotions.get(scene)?.resume();
  sectionNarrativeMotion.resume();
  if ($('#art-field')) { $('#art-field').inert = !collection; $('#art-field').setAttribute('aria-hidden', String(!collection)); $('#art-field').style.opacity = collection ? '1' : '0'; }
  art?.setMotion(transitionMotion() && state.mode === 'live');
  art?.setActive(collection && (phone.matches || moving()) && state.mode === 'live');
  seminalProjects.activate(scene, { motion: transitionMotion() && state.mode === 'live' });
  hopeGallery.activate(scene, { motion: moving() && state.mode === 'live' });
- spaceOpportunities.activate(scene, { motion: moving() && state.mode === 'live' });
+ spaceOpportunities.activate(scene, { motion: transitionMotion() && state.mode === 'live' });
 }
 function refreshMotion() {
  if (state.transitioning) {
-  if (!transitionMotion()) { transition?.progress(1); clarkLogoMotion.setMotion(false); sectionNarrativeMotion.pause(); }
+  if (!transitionMotion()) { transition?.progress(1); clarkLogoMotions.forEach(logo => logo.setMotion(false)); sectionNarrativeMotion.pause(); }
   updateChrome();
   return;
  }
@@ -190,11 +192,16 @@ function scheduleAuto() {
 function validSceneId(value) { return validateSceneId(value, sceneIds); }
 function sceneFromHash() { return parseSceneHash(location.hash, sceneIds); }
 function savedSceneId() {
+ if (menuPreview) return null;
  try { return validSceneId(sessionStorage.getItem(sceneStorageKey)); } catch { return null; }
 }
 function rememberScene(scene, { notify = true } = {}) {
  const id = scene?.dataset.compositionId;
  if (!id || state.mode !== 'live') return;
+ if (menuPreview) {
+  if (notify && parent !== window) parent.postMessage({ type: 'RBB_PREVIEW_SCENE', scene: id }, location.origin);
+  return;
+ }
  try { sessionStorage.setItem(sceneStorageKey, id); } catch { /* Private browsing may restrict storage. */ }
  const url = new URL(location.href); url.hash = id;
  history.replaceState(null, '', url);
@@ -259,7 +266,7 @@ async function go(index, { instant = false, seek = false } = {}) {
  const from = scenes[state.index], to = scenes[index], direction = index >= state.index ? 1 : -1;
  stopAmbient(from);
  if (from !== to) {
-  if (isCollection(from)) clarkLogoMotion.leave();
+  clarkLogoMotions.get(from)?.leave();
   sectionNarrativeMotion.leave(from);
  }
  gsap.set(to, { opacity: 0 });
@@ -285,12 +292,13 @@ async function go(index, { instant = false, seek = false } = {}) {
  if (!useProjectSequence) seminalProjects.settle(to);
  const arc = animate && !useProjectSequence && !phoneProjectStep ? arcs.begin(to, { direction, curve: phoneTransition ? 22 : 12 }) : null;
  to.classList.add('active'); to.inert = false; to.setAttribute('aria-hidden', 'false');
+ if (menuPreview && parent !== window) parent.postMessage({ type: 'RBB_PREVIEW_SCENE', scene: to.dataset.compositionId }, location.origin);
  if (phone.matches) to.scrollTop = 0;
  from.inert = true; from.style.pointerEvents = 'none';
  to.style.zIndex = '3'; from.style.zIndex = '2';
  timelines[to.dataset.compositionId].progress(1).pause();
  gsap.set(to.querySelector('.scene-inner'), { clearProps: 'transform,opacity' });
- if (isCollection(to)) clarkLogoMotion.enter({ motion: !seek && transitionMotion() });
+ clarkLogoMotions.get(to)?.enter({ motion: !seek && transitionMotion() });
  sectionNarrativeMotion.enter(to, { motion: !seek && transitionMotion() });
  if (isCollection(to)) { art?.setActive(moving()); focus.value = 1; art?.setFocus(1); $('#art-field').style.opacity = '1'; }
  const projectSequence = useProjectSequence ? seminalProjects.beginTransition(from, to) : null;
@@ -373,6 +381,7 @@ function closeOverview() {
  return setOverviewOpen(false);
 }
 function openOverview() {
+ if (menuPreview) return Promise.resolve(false);
  if (state.transitioning) {
   if (!pendingOverviewOpen) {
    let resolve;
@@ -485,6 +494,7 @@ addEventListener('pointermove', () => {
 
 async function seekTime(time) {
  state.mode = 'seek'; state.autoplay = false; clearTimeout(autoTimer);
+ clarkLogoMotions.forEach(logo => logo.setMotion(false));
  const index = Math.max(0, scenes.findLastIndex(scene => Number(scene.dataset.start) <= time));
  await go(index, { instant: true, seek: true }); stopAmbient(scenes[index]); art?.setMotion(false);
  const local = Math.max(0, time - Number(scenes[index].dataset.start));

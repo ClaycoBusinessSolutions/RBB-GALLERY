@@ -50,3 +50,5 @@
 #slide-navigation #nav-prev,#slide-navigation #nav-next{display:flex;align-items:center;justify-content:center;min-width:48px;min-height:48px;padding:12px;background:transparent;color:#000}
 #slide-navigation[data-theme="dark"] #nav-prev,#slide-navigation[data-theme="dark"] #nav-next{color:#fff}
 #slide-navigation .nav-arrow{display:block;flex:none;width:24px;height:24px;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+
+#slide-navigation .nav-arrow__chevron{display:none}

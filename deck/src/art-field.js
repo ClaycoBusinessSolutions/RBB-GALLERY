@@ -25,17 +25,21 @@ function shuffle(items) {
   return result;
 }
 
-// Small native image grids avoid 24 composited 3D layers on phones. The same
-// source artwork is retained; only the desktop ambient field is simplified.
+// Six gently drifting native images give both phone covers the same moving
+// backdrop without the desktop's 24 3D layers or a JavaScript frame loop.
 function mountPhoneArtField(host, items, { onSelect } = {}) {
   const root = document.createElement('div');
   root.className = 'rbb-art-field rbb-art-field--mobile';
   root.dataset.count = String(items.length);
-  root.setAttribute('aria-label', 'Selected images');
+  root.setAttribute('aria-label', 'A moving field of selected images');
+  root.inert = true;
+  root.style.setProperty('--cover-play-state', 'paused');
   const camera = document.createElement('div');
   camera.className = 'rbb-art-field__camera';
   root.append(camera);
   const events = new AbortController();
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let active = false, motion = true, disposed = false;
   for (const item of items.slice(0, 6)) {
     const card = document.createElement(onSelect ? 'button' : 'div');
     card.className = 'rbb-art-field__card';
@@ -48,14 +52,27 @@ function mountPhoneArtField(host, items, { onSelect } = {}) {
     image.src = item.card_src || item.src;
     card.dataset.artworkId = item.id || '';
     card.setAttribute('aria-label', image.alt);
-    card.append(image); camera.append(card);
+    const drift = document.createElement('span');
+    drift.className = 'rbb-art-field__drift';
+    drift.append(image); card.append(drift); camera.append(card);
     if (onSelect) card.addEventListener('click', () => onSelect(item), { signal: events.signal });
   }
   host.append(root);
+  function sync() {
+    if (disposed) return;
+    const running = active && motion && !reduced.matches && !document.hidden;
+    root.style.setProperty('--cover-play-state', running ? 'running' : 'paused');
+    root.dataset.motion = running ? 'running' : 'paused';
+  }
+  document.addEventListener('visibilitychange', sync, { signal: events.signal });
+  reduced.addEventListener('change', sync, { signal: events.signal });
+  sync();
   return {
-    setActive(value) { root.inert = !value; },
-    setMotion() {}, setFocus() {}, seek() {},
-    dispose() { events.abort(); root.remove(); },
+    setActive(value) { active = Boolean(value); root.inert = !active; sync(); },
+    setMotion(value) { motion = Boolean(value); sync(); },
+    setFocus() {},
+    seek(seconds) { for (const animation of root.getAnimations({ subtree: true })) animation.currentTime = Math.max(0, Number(seconds) || 0) * 1000; },
+    dispose() { if (disposed) return; disposed = true; events.abort(); root.remove(); },
   };
 }
 

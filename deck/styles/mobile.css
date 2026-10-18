@@ -159,3 +159,12 @@
 @media (max-width:900px) and (prefers-reduced-motion:reduce) {
   #slide-navigation{transition:none}
 }
+
+/* Calm, familiar phone navigation: single chevrons without arrow shafts. */
+@media(max-width:900px){
+  #slide-navigation .nav-arrow{width:28px;height:28px;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round}
+  #slide-navigation .nav-arrow__full{display:none}
+  #slide-navigation .nav-arrow__chevron{display:block}
+  #slide-navigation #nav-prev,#slide-navigation #nav-next{padding:10px!important}
+  .slide-navigation__steps{gap:7px}
+}

@@ -32,9 +32,9 @@ export function addSceneReveal(parent, scene, { instant = false, direction = 1, 
     // individual paragraph timelines. The page wipe owns the main movement.
     const targets = [heading, ...labels.slice(0, 1)].filter(Boolean);
     if (targets.length) parent.fromTo(targets, { opacity: .45, y: 12 * direction }, {
-      opacity: 1, y: 0, duration: .48, ease: 'power2.out', stagger: .035
-    }, .2);
-    parent.call(() => settleSceneReveal(scene), [], .74);
+      opacity: 1, y: 0, duration: .78, ease: 'power2.out', stagger: .05
+    }, .32);
+    parent.call(() => settleSceneReveal(scene), [], 1.18);
     return;
   }
   const timeline = gsap.timeline({ defaults: { ease: 'power3.out', duration: .85 } });

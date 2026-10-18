@@ -23,7 +23,7 @@ const LABELS = {
 };
 
 function loadStyles() {
-  const href = new URL('../museum-menu.css?v=817fbdac022f186ec38e', import.meta.url).href;
+  const href = new URL('../museum-menu.css?v=d760ceaf1131a5a096e5', import.meta.url).href;
   if ([...document.styleSheets].some(sheet => sheet.href === href)) return Promise.resolve();
   let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(item => item.href === href);
   return new Promise(resolve => {
@@ -184,7 +184,7 @@ export function mountMuseumMenu(host, { scenes = [], onSelect, onClose, getIndex
         }
         resolve(true);
       } });
-      const duration = reduced.matches ? 0 : phone.matches ? .48 : 1.2;
+      const duration = reduced.matches ? 0 : phone.matches ? .7 : 1.2;
       if (phone.matches) timeline.to(host, { opacity: opening ? 1 : 0, duration, ease: 'power2.inOut' }, 0);
       // A long vertical phone menu should fade/rise a few pixels, rather than
       // move a quarter of its entire scrollable height like the desktop footer.

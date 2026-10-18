@@ -1,13 +1,13 @@
-import { mountArtField } from './art-field.js?v=817fbdac022f186ec38e';
-import { mountProjectField } from './project-field.js?v=817fbdac022f186ec38e';
-import { mountArcTransition } from './arc-transition.js?v=817fbdac022f186ec38e';
-import { mountMuseumMenu } from './museum-menu.js?v=817fbdac022f186ec38e';
-import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=817fbdac022f186ec38e';
-import { createSeminalProjects } from './seminal-projects.js?v=817fbdac022f186ec38e';
-import { isProjectSequence } from './project-sequence.js?v=817fbdac022f186ec38e';
-import { createHopeGallery } from './hope-gallery.js?v=817fbdac022f186ec38e';
-import { createSpaceOpportunities } from './space-opportunities.js?v=817fbdac022f186ec38e';
-import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=817fbdac022f186ec38e';
+import { mountArtField } from './art-field.js?v=d760ceaf1131a5a096e5';
+import { mountProjectField } from './project-field.js?v=d760ceaf1131a5a096e5';
+import { mountArcTransition } from './arc-transition.js?v=d760ceaf1131a5a096e5';
+import { mountMuseumMenu } from './museum-menu.js?v=d760ceaf1131a5a096e5';
+import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=d760ceaf1131a5a096e5';
+import { createSeminalProjects } from './seminal-projects.js?v=d760ceaf1131a5a096e5';
+import { isProjectSequence } from './project-sequence.js?v=d760ceaf1131a5a096e5';
+import { createHopeGallery } from './hope-gallery.js?v=d760ceaf1131a5a096e5';
+import { createSpaceOpportunities } from './space-opportunities.js?v=d760ceaf1131a5a096e5';
+import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=d760ceaf1131a5a096e5';
 
 const $ = selector => document.querySelector(selector);
 const scenes = [...document.querySelectorAll('.scene')];
@@ -27,7 +27,7 @@ const timelines = window.__timelines ||= {};
 const focus = { value: 0 };
 let art, artPromise, projectField, projectFieldPromise, artworks = [], museumMenu, officeAccordion, officeAccordionPromise;
 let initialized = false, pendingExternalScene = null, fieldGeneration = 0;
-let queue = null, navigationTarget = 0, autoTimer, transition, menuBusy = false;
+let queue = null, queuedPhoneEntry = 1, navigationTarget = 0, autoTimer, transition, menuBusy = false;
 let menuWanted = false, menuGeneration = 0, menuPromise = Promise.resolve(true), menuSheetTween;
 let pendingOverviewOpen = null;
 const isProjectCover = scene => scene?.dataset.compositionId === 'invitation-cover';
@@ -122,7 +122,7 @@ async function prepareScene(scene) {
  await Promise.allSettled([prepareCover(scene), hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
  if (scene.dataset.compositionId === 'office-art') {
   const generation = fieldGeneration;
-  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=817fbdac022f186ec38e').then(async ({ mountWavyAccordion }) => {
+  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=d760ceaf1131a5a096e5').then(async ({ mountWavyAccordion }) => {
    if (generation !== fieldGeneration) return null;
    const root = scene.querySelector('[data-wavy-accordion-init]');
    officeAccordion = mountWavyAccordion(root, { onSelect: index => openOfficePhoto(root, index) });
@@ -144,7 +144,7 @@ function stopAmbient(scene) {
  seminalProjects.pause(); hopeGallery.pause(); spaceOpportunities.pause();
 }
 function startAmbient(scene) {
- projectField?.setMotion(moving() && state.mode === 'live');
+ projectField?.setMotion(transitionMotion() && state.mode === 'live');
  projectField?.setActive(isProjectCover(scene) && (phone.matches || moving()) && state.mode === 'live');
  if (scene.dataset.compositionId === 'office-art') {
   officeAccordion?.setMotion(moving() && state.mode === 'live');
@@ -152,7 +152,7 @@ function startAmbient(scene) {
  }
  const collection = isCollection(scene);
  if ($('#art-field')) { $('#art-field').inert = !collection; $('#art-field').setAttribute('aria-hidden', String(!collection)); $('#art-field').style.opacity = collection ? '1' : '0'; }
- art?.setMotion(moving() && state.mode === 'live');
+ art?.setMotion(transitionMotion() && state.mode === 'live');
  art?.setActive(collection && (phone.matches || moving()) && state.mode === 'live');
  seminalProjects.activate(scene, { motion: moving() && state.mode === 'live' });
  hopeGallery.activate(scene, { motion: moving() && state.mode === 'live' });
@@ -228,8 +228,11 @@ function snapshotPhoneMarket(scene) {
  scene.append(snapshot);
  return snapshot;
 }
-function stepBy(delta) { return go((queue ?? (state.transitioning ? navigationTarget : state.index)) + delta); }
-async function go(index, { instant = false, seek = false } = {}) {
+function stepBy(delta) {
+ if (phone.matches && !state.transitioning && !isOverlay() && seminalProjects.stepPhone(delta, { motion: transitionMotion() })) return;
+ return go((queue ?? (state.transitioning ? navigationTarget : state.index)) + delta, { phoneEntry: delta });
+}
+async function go(index, { instant = false, seek = false, phoneEntry = 1 } = {}) {
  if (typeof index === 'string' && !/^\d+$/.test(index)) {
   index = normalizeSceneId(index);
   index = scenes.findIndex(scene => scene.dataset.compositionId === index);
@@ -237,7 +240,7 @@ async function go(index, { instant = false, seek = false } = {}) {
  }
  index = Math.max(0, Math.min(scenes.length - 1, Number(index)));
  if (!Number.isFinite(index)) return;
- if (state.transitioning) { queue = index; return; }
+ if (state.transitioning) { queue = index; queuedPhoneEntry = phoneEntry; return; }
  if (index === state.index && scenes[index].classList.contains('active')) { if (!seek) rememberScene(scenes[index]); return; }
  navigationTarget = index;
  state.transitioning = true;
@@ -257,13 +260,14 @@ async function go(index, { instant = false, seek = false } = {}) {
  state.index = index; updateChrome();
  const phoneTransition = phone.matches;
  const animate = !instant && !pendingOverviewOpen && transitionMotion();
- const duration = animate ? phoneTransition ? .8 : SCENE_MOTION.duration : 0;
+ const duration = animate ? phoneTransition ? 1.25 : SCENE_MOTION.duration : 0;
  const projectStep = animate && hasFrom && isProjectSequence(from, to);
  const useProjectSequence = !phoneTransition && projectStep;
  const phoneProjectStep = phoneTransition && projectStep;
  const phoneSnapshot = phoneTransition && animate && hasFrom && from !== to && from.matches('.seminal-projects') && to.matches('.seminal-projects') ? snapshotPhoneMarket(from) : null;
  if (phoneTransition && animate) stage.classList.add('mobile-transitioning');
  const mapMorph = spaceOpportunities.beginTransition(from, to, { duration, motion: animate && hasFrom });
+ if (phoneTransition && from !== to) seminalProjects.setPhoneEntry(to, phoneEntry);
  if (!useProjectSequence) seminalProjects.settle(to);
  const arc = animate && !useProjectSequence && !phoneProjectStep ? arcs.begin(to, { direction, curve: phoneTransition ? 22 : 12 }) : null;
  to.classList.add('active'); to.inert = false; to.setAttribute('aria-hidden', 'false');
@@ -280,7 +284,7 @@ async function go(index, { instant = false, seek = false } = {}) {
   if (projectSequence) transition.add(projectSequence.timeline.paused(false), 0);
   else if (phoneProjectStep) {
    // One viewport push keeps the market photographs moving up and out, while
-   // each settled portrait market remains freely scrollable and readable.
+   // each settled portrait market shows a complete page of project cards.
    const distance = stage.clientHeight;
    gsap.set([from, to], { opacity: 1 });
    transition.fromTo(to, { y: direction * distance }, { y: 0, duration, ease: 'power3.inOut' }, 0);
@@ -326,7 +330,7 @@ async function go(index, { instant = false, seek = false } = {}) {
   pending.resolve(await setOverviewOpen(true));
   return;
  }
- if (queue !== null) { const target = queue; queue = null; if (target !== state.index) go(target); }
+ if (queue !== null) { const target = queue, entry = queuedPhoneEntry; queue = null; if (target !== state.index) go(target, { phoneEntry: entry }); }
 }
 function pauseForOverlay() { stopAmbient(scenes[state.index]); clearTimeout(autoTimer); }
 function setOverviewOpen(wanted) {

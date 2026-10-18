@@ -1,5 +1,5 @@
 /** Source-backed details layered over the continuous project stream. */
-import { mountProjectStream } from './project-queue.js?v=817fbdac022f186ec38e';
+import { mountProjectStream } from './project-queue.js?v=d760ceaf1131a5a096e5';
 const SELECTORS = { button: 'button[data-project-id]' };
 
 export function createSeminalProjects({ onOpen, onClose } = {}) {
@@ -175,6 +175,8 @@ export function createSeminalProjects({ onOpen, onClose } = {}) {
   reduced.addEventListener('change', () => { if (activeScene) activate(activeScene, { motion }); }, { signal });
   return {
     activate, pause, prepare: scene => stream.prepare(scene),
+    stepPhone: (delta, options) => stream.stepPhone(delta, options),
+    setPhoneEntry: (scene, direction) => stream.setPhoneEntry(scene, direction),
     settle: scene => { if (scene?.matches('.seminal-projects')) { stream.activate(scene); stream.pause(); } },
     beginTransition: (from, to) => stream.transition(from, to),
     destroy() {

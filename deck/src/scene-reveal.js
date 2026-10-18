@@ -5,9 +5,9 @@
 export const SCENE_MOTION = Object.freeze({ duration: 1.45, ease: 'power3.inOut' });
 
 function elements(scene) {
-  const heading = scene.querySelector('h1,h2,.source-invitation-copy');
+  const heading = scene.querySelector('h1:not(.clark-brandmark),h2:not(.clark-brandmark),.source-invitation-copy');
   const labels = [...scene.querySelectorAll('.eyebrow,.invitation-cover__years')];
-  const visuals = [...scene.querySelectorAll('.invitation-cover__architecture,.source-art-pair figure,.hope-gallery__viewport,.project-queue__grid,.space-opportunity__reference,.space-opportunity__model,[data-scene-visual]')].filter(element => element !== heading);
+  const visuals = [...scene.querySelectorAll('.invitation-cover__architecture,.source-art-pair figure,.hope-gallery__viewport,.project-queue__grid,.space-opportunity__reference,.space-opportunity__model,[data-scene-visual]')].filter(element => element !== heading && !element.matches('.clark-brandmark'));
   const copy = [...scene.querySelectorAll('.source-statement__body > p,.invitation-cover__subtitle,.collaboration-invitation__lead,.collaboration-invitation__questions > p,.hope-gallery__story > p,.space-overview__copy > p,.space-opportunity__copy,.model-copy,.model-note,.statement-tail,.cover-caption,.closing-note,.voices-copy > p:not(.eyebrow),.source-caption,[data-queued-reveal]')]
     .filter((element, index, all) => element !== heading && all.indexOf(element) === index && !element.closest('[hidden]'));
   const controls = [...scene.querySelectorAll('.invitation-cover__begin,.scene-cta,.begin,.hope-gallery__tabs,.space-opportunity__controls')];

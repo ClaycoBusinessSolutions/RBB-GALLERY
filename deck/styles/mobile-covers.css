@@ -10,7 +10,7 @@
   .rbb-art-field--mobile .rbb-art-field__mobile-track{display:flex;align-items:center;width:max-content;height:100%;animation:mobile-cover-flow var(--cover-flow-duration,42s) linear infinite;animation-delay:var(--cover-flow-delay,-3s);animation-play-state:var(--cover-play-state,paused);will-change:transform}
   .rbb-art-field--mobile .rbb-art-field__mobile-sequence{display:flex;align-items:center;gap:20px;height:100%;padding-right:20px;flex-shrink:0}
   #project-field .rbb-art-field--mobile .rbb-art-field__card,#art-field .rbb-art-field--mobile .rbb-art-field__card{position:relative;inset:auto;flex:0 0 auto;width:clamp(210px,60vw,360px);height:100%;margin:0;padding:0;border:0;background:transparent;overflow:hidden;opacity:.92;border-radius:0;pointer-events:none;will-change:auto}
-  #project-field .rbb-art-field--mobile .rbb-art-field__card{width:clamp(250px,72vw,430px)}
+  #project-field .rbb-art-field--mobile .rbb-art-field__card{width:clamp(170px,calc(72vw * var(--cover-card-width,1)),440px);height:calc(100% * var(--cover-card-height,1));margin-right:var(--cover-card-gap,0px);transform:translateY(var(--cover-card-offset,0px))!important}
   #project-field .rbb-art-field--mobile .rbb-art-field__card[data-interactive="true"],#art-field .rbb-art-field--mobile .rbb-art-field__card[data-interactive="true"]{pointer-events:auto;cursor:pointer}
   #project-field .rbb-art-field--mobile .rbb-art-field__card img,#art-field .rbb-art-field--mobile .rbb-art-field__card img{display:block;width:100%;height:100%;object-position:center;pointer-events:none;user-select:none;-webkit-user-drag:none}
   #project-field .rbb-art-field--mobile .rbb-art-field__card img{object-fit:cover;border-radius:3px}

@@ -195,6 +195,9 @@
   #slide-navigation #nav-menu[data-content-behind="true"]::after,
   #slide-navigation #nav-prev[data-content-behind="true"]::after,
   #slide-navigation #nav-next[data-content-behind="true"]::after{opacity:1}
+  #slide-navigation[data-contrast-instant] #nav-menu::after,
+  #slide-navigation[data-contrast-instant] #nav-prev::after,
+  #slide-navigation[data-contrast-instant] #nav-next::after{transition:none}
 }
 @media(max-width:900px) and (prefers-reduced-motion:reduce){
   #slide-navigation #nav-menu::after,#slide-navigation #nav-prev::after,#slide-navigation #nav-next::after{transition:none}

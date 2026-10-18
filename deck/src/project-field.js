@@ -1,5 +1,5 @@
 /** The Clark Collection's existing moving collage, populated by Clayco projects. */
-import { mountArtField } from './art-field.js?v=174b0d2663d36979cd38';
+import { mountArtField } from './art-field.js?v=4348a88a43b47ff71587';
 
 export async function mountProjectField(host, { onSelect } = {}) {
   if (!host?.append) throw new TypeError('mountProjectField requires a host element.');
@@ -10,7 +10,7 @@ export async function mountProjectField(host, { onSelect } = {}) {
   const scene = host.closest('.invitation-cover');
   scene?.classList.add('project-cover');
   host.setAttribute('aria-label', 'Clayco projects across four decades of building');
-  const field = mountArtField(host, projects, { onSelect });
+  const field = mountArtField(host, projects, { onSelect, variedSizes: true });
   const root = host.querySelector('.rbb-art-field');
   root?.setAttribute('aria-label', 'A moving field of Clayco project photographs and renderings');
   host.dataset.projectCount = String(projects.length);

@@ -23,7 +23,7 @@ const LABELS = {
 };
 
 function loadStyles() {
-  const href = new URL('../museum-menu.css?v=d4dd401648c2688753cf', import.meta.url).href;
+  const href = new URL('../museum-menu.css?v=4a70eb9f4c3945011126', import.meta.url).href;
   if ([...document.styleSheets].some(sheet => sheet.href === href)) return Promise.resolve();
   let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(item => item.href === href);
   return new Promise(resolve => {

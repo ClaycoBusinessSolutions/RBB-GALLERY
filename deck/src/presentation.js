@@ -1,13 +1,14 @@
-import { mountArtField } from './art-field.js?v=d4dd401648c2688753cf';
-import { mountProjectField } from './project-field.js?v=d4dd401648c2688753cf';
-import { mountArcTransition } from './arc-transition.js?v=d4dd401648c2688753cf';
-import { mountMuseumMenu } from './museum-menu.js?v=d4dd401648c2688753cf';
-import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=d4dd401648c2688753cf';
-import { createSeminalProjects } from './seminal-projects.js?v=d4dd401648c2688753cf';
-import { isProjectSequence } from './project-sequence.js?v=d4dd401648c2688753cf';
-import { createHopeGallery } from './hope-gallery.js?v=d4dd401648c2688753cf';
-import { createSpaceOpportunities } from './space-opportunities.js?v=d4dd401648c2688753cf';
-import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=d4dd401648c2688753cf';
+import { mountArtField } from './art-field.js?v=4a70eb9f4c3945011126';
+import { mountProjectField } from './project-field.js?v=4a70eb9f4c3945011126';
+import { mountArcTransition } from './arc-transition.js?v=4a70eb9f4c3945011126';
+import { mountMuseumMenu } from './museum-menu.js?v=4a70eb9f4c3945011126';
+import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=4a70eb9f4c3945011126';
+import { createSeminalProjects } from './seminal-projects.js?v=4a70eb9f4c3945011126';
+import { isProjectSequence } from './project-sequence.js?v=4a70eb9f4c3945011126';
+import { createHopeGallery } from './hope-gallery.js?v=4a70eb9f4c3945011126';
+import { createSpaceOpportunities } from './space-opportunities.js?v=4a70eb9f4c3945011126';
+import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=4a70eb9f4c3945011126';
+import { mountMobileNavContrast } from './mobile-nav-contrast.js?v=4a70eb9f4c3945011126';
 
 const $ = selector => document.querySelector(selector);
 const scenes = [...document.querySelectorAll('.scene')];
@@ -23,6 +24,7 @@ const sheet = $('#presentation-sheet') || document.createElement('div');
 if (!sheet.isConnected) { sheet.id = 'presentation-sheet'; stage.before(sheet); }
 for (const element of [stage, $('#deck-chrome'), $('#slide-navigation')]) if (element && element.parentElement !== sheet) sheet.append(element);
 const nav = $('#slide-navigation');
+const navContrast = mountMobileNavContrast({ nav, stage, phone });
 const timelines = window.__timelines ||= {};
 const focus = { value: 0 };
 let art, artPromise, projectField, projectFieldPromise, artworks = [], museumMenu, officeAccordion, officeAccordionPromise;
@@ -90,6 +92,7 @@ function updateChrome() {
   nav.inert = menuWanted || menuBusy;
  }
  museumMenu?.setIndex(state.index);
+ navContrast.refresh();
 }
 // Keep both large cover fields dormant until their scene is actually requested.
 // Restoring a later phone slide should not decode a second, hidden image field.
@@ -122,7 +125,7 @@ async function prepareScene(scene) {
  await Promise.allSettled([prepareCover(scene), hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
  if (scene.dataset.compositionId === 'office-art') {
   const generation = fieldGeneration;
-  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=d4dd401648c2688753cf').then(async ({ mountWavyAccordion }) => {
+  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=4a70eb9f4c3945011126').then(async ({ mountWavyAccordion }) => {
    if (generation !== fieldGeneration) return null;
    const root = scene.querySelector('[data-wavy-accordion-init]');
    officeAccordion = mountWavyAccordion(root, { onSelect: index => openOfficePhoto(root, index) });

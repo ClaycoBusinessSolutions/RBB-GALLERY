@@ -2,7 +2,7 @@
 .project-scroll-hint{display:none}
 @media (max-width:900px) {
   .seminal-projects--stream.scene{overflow:hidden}
-  .project-stream.project-stream--mobile{box-sizing:border-box;height:calc(100% - 72px - env(safe-area-inset-bottom))!important;min-height:0!important;overflow-x:hidden!important;overflow-y:auto!important;padding-bottom:32px;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .project-stream.project-stream--mobile{box-sizing:border-box;height:100%!important;min-height:0!important;overflow-x:hidden!important;overflow-y:auto!important;padding-bottom:calc(104px + env(safe-area-inset-bottom));overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .project-stream--mobile::-webkit-scrollbar{display:none}
   .project-stream--mobile .project-stream__track{padding:0;will-change:auto}
   .project-stream--mobile .project-stream__market[hidden]{display:none!important}

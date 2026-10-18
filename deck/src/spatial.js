@@ -1,4 +1,4 @@
-import * as THREE from '../vendor/three/build/three.module.js?v=d4dd401648c2688753cf';
+import * as THREE from '../vendor/three/build/three.module.js?v=4a70eb9f4c3945011126';
 
 // Lightweight source-grounded 3D study. Metres from the original Rhino export.
 // These cutaways simplify boundaries, furnishings, model identities and lighting.

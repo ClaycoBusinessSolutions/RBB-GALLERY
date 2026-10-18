@@ -1,4 +1,4 @@
-import * as THREE from '../vendor/three/build/three.module.js?v=de5c49ac8812090e1b07';
+import * as THREE from '../vendor/three/build/three.module.js?v=174b0d2663d36979cd38';
 
 // Lightweight source-grounded 3D study. Metres from the original Rhino export.
 // These cutaways simplify boundaries, furnishings, model identities and lighting.
@@ -86,7 +86,7 @@ export function mountSpatial(host){
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;
-  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;renderer.shadowMap.autoUpdate=false;
   renderer.domElement.className='spatial-canvas';renderer.domElement.style.cssText='display:block;width:100%;height:100%;touch-action:none;cursor:grab';renderer.domElement.setAttribute('aria-label','Interactive simplified 3D model of the RBB gallery');host.append(renderer.domElement);
   const scene=new THREE.Scene();scene.background=null;
   const camera=new THREE.OrthographicCamera(-10,10,10,-10,.1,180);camera.up.set(0,1,0);
@@ -97,7 +97,9 @@ export function mountSpatial(host){
   const redLight=new THREE.PointLight('#ed5240',0,30,1.5);scene.add(redLight);
   let texture=null,destroyed=false,inViewport=true,group=null,raf=0,lastFrame=0,clock=0,frames=0,lastStatsTime=0,fps=0,fpsCount=0,nightMix=0,reveal=1,sampleTime=null;
   let geometryBounds=new THREE.Box3(),center=new THREE.Vector3(),radius=12,baseSize=10,aspect=1;
-  let theta=-2.37,phi=.95,desiredTheta=-2.37,desiredPhi=.95,zoom=1,desiredZoom=1,manualTheta=0,manualPhi=0,pointer=null,manualUntil=0;
+  let theta=-2.37,phi=.95,desiredTheta=-2.37,desiredPhi=.95,zoom=1,desiredZoom=1,manualTheta=0,manualPhi=0,manualUntil=0;
+  const pointers=new Map();
+  let pinchDistance=0;
   const mats={
     ground:new THREE.MeshStandardMaterial({color:'#d4d0c5',roughness:.77}),
     wall:new THREE.MeshStandardMaterial({color:'#f4f0e5',roughness:.8,side:THREE.DoubleSide}),
@@ -124,20 +126,51 @@ export function mountSpatial(host){
   function loop(time){raf=0;if(!state.active||!inViewport||!state.motion||reduced.matches||document.hidden||destroyed)return;if(time-lastFrame>=1000/30-.5){const dt=lastFrame?Math.min((time-lastFrame)/1000,.08):.033;lastFrame=time;clock+=dt;render(dt)}raf=requestAnimationFrame(loop)}
   function start(){if(!raf&&sampleTime===null&&state.active&&inViewport&&state.motion&&!reduced.matches&&!document.hidden&&!destroyed){lastFrame=0;lastStatsTime=performance.now();fpsCount=0;raf=requestAnimationFrame(loop)}}
   function stop(){if(raf)cancelAnimationFrame(raf);raf=0;lastFrame=0}
-  function update(next={}){if(destroyed)return;sampleTime=null;const old={...state};Object.assign(state,next);if(!['table','glass','shelf','wall','combined'].includes(state.option))state.option='table';state.lighting=state.lighting==='night'?'night':'day';state.view=state.view==='plan'?'plan':'axon';state.azimuth=Number.isFinite(state.azimuth)?state.azimuth:null;state.active=!!state.active;state.motion=state.motion!==false;state.reveal=state.reveal!==false;renderer.domElement.dataset.option=state.option;renderer.domElement.dataset.view=state.view;renderer.domElement.dataset.lighting=state.lighting;if(old.option!==state.option)rebuild();if(old.view!==state.view||old.azimuth!==state.azimuth){manualTheta=0;manualPhi=0;desiredZoom=1;desiredTheta=Number.isFinite(state.azimuth)?state.azimuth:((state.option==='wall'||state.option==='combined')?-1.9:-2.37);fit()}if(!state.active||!state.motion||reduced.matches)stop();if(state.active){resize();if(!old.active){reveal=state.motion&&state.reveal&&!reduced.matches?.06:1;desiredZoom=1;position(.033,!state.motion||reduced.matches)}drawOnce();}}
-  const visibility=()=>{if(document.hidden)stop();else drawOnce()};document.addEventListener('visibilitychange',visibility);
+  function update(next={}){if(destroyed)return;if(next.active===false||('option' in next&&next.option!==state.option)||('view' in next&&next.view!==state.view))clearPointers();sampleTime=null;const old={...state};Object.assign(state,next);if(!['table','glass','shelf','wall','combined'].includes(state.option))state.option='table';state.lighting=state.lighting==='night'?'night':'day';state.view=state.view==='plan'?'plan':'axon';state.azimuth=Number.isFinite(state.azimuth)?state.azimuth:null;state.active=!!state.active;state.motion=state.motion!==false;state.reveal=state.reveal!==false;renderer.domElement.dataset.option=state.option;renderer.domElement.dataset.view=state.view;renderer.domElement.dataset.lighting=state.lighting;if(old.option!==state.option)rebuild();if(old.view!==state.view||old.azimuth!==state.azimuth){manualTheta=0;manualPhi=0;desiredZoom=1;desiredTheta=Number.isFinite(state.azimuth)?state.azimuth:((state.option==='wall'||state.option==='combined')?-1.9:-2.37);fit()}if(!state.active||!state.motion||reduced.matches)stop();if(state.active){resize();if(!old.active){reveal=state.motion&&state.reveal&&!reduced.matches?.06:1;desiredZoom=1;position(.033,!state.motion||reduced.matches)}drawOnce();}}
+  const visibility=()=>{if(document.hidden){clearPointers();stop()}else drawOnce()};document.addEventListener('visibilitychange',visibility);
   const reducedChange=()=>{stop();drawOnce()};reduced.addEventListener('change',reducedChange);
   const resizeObserver=new ResizeObserver(()=>resize());resizeObserver.observe(host);
   const intersectionObserver=new IntersectionObserver(entries=>{const visible=entries.some(entry=>entry.isIntersecting);if(inViewport===visible)return;inViewport=visible;if(visible)drawOnce();else stop()});intersectionObserver.observe(host);
-  const down=e=>{if(!state.active)return;pointer={x:e.clientX,y:e.clientY};manualUntil=performance.now()+4500;renderer.domElement.setPointerCapture(e.pointerId);renderer.domElement.style.cursor='grabbing'};
-  const move=e=>{if(!pointer||state.view==='plan')return;manualTheta-=(e.clientX-pointer.x)*.005;manualPhi=clamp(manualPhi+(e.clientY-pointer.y)*.004,-.6,.35);pointer={x:e.clientX,y:e.clientY};manualUntil=performance.now()+4500;render(.05,!state.motion||reduced.matches)};
-  const up=()=>{pointer=null;renderer.domElement.style.cursor='grab';manualUntil=performance.now()+4500};
+  // Pointer capture keeps an orbit or pinch stable when fingers leave the canvas.
+  // Only the canvas owns touch gestures; the surrounding spread remains scrollable.
+  function pointerDistance(){const[a,b]=pointers.values();return a&&b?Math.hypot(b.x-a.x,b.y-a.y):0}
+  function clearPointers(){
+    const ids=[...pointers.keys()];pointers.clear();pinchDistance=0;
+    for(const id of ids)if(renderer.domElement.hasPointerCapture(id))renderer.domElement.releasePointerCapture(id);
+    renderer.domElement.style.cursor='grab';
+  }
+  const down=e=>{
+    if(!state.active||pointers.size>=2||(e.pointerType!=='touch'&&e.button!==0))return;
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    pinchDistance=pointerDistance();manualUntil=performance.now()+4500;
+    renderer.domElement.setPointerCapture(e.pointerId);renderer.domElement.style.cursor='grabbing';
+  };
+  const move=e=>{
+    const previous=pointers.get(e.pointerId);
+    if(!state.active||!previous)return;
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===2){
+      const distance=pointerDistance();
+      if(pinchDistance>1&&distance>1)desiredZoom=clamp(desiredZoom*distance/pinchDistance,.75,1.7);
+      pinchDistance=distance;
+    }else if(state.view!=='plan'){
+      manualTheta-=(e.clientX-previous.x)*.005;
+      manualPhi=clamp(manualPhi+(e.clientY-previous.y)*.004,-.6,.35);
+    }
+    manualUntil=performance.now()+4500;render(.05,!state.motion||reduced.matches);
+  };
+  const up=e=>{
+    if(!pointers.delete(e.pointerId))return;
+    pinchDistance=pointerDistance();
+    if(renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.releasePointerCapture(e.pointerId);
+    renderer.domElement.style.cursor=pointers.size?'grabbing':'grab';manualUntil=performance.now()+4500;
+  };
   const wheel=e=>{if(!state.active)return;e.preventDefault();desiredZoom=clamp(desiredZoom*Math.exp(-e.deltaY*.00065),.75,1.7);render(.05,!state.motion||reduced.matches)};
-  renderer.domElement.addEventListener('pointerdown',down);renderer.domElement.addEventListener('pointermove',move);renderer.domElement.addEventListener('pointerup',up);renderer.domElement.addEventListener('pointercancel',up);renderer.domElement.addEventListener('wheel',wheel,{passive:false});
+  renderer.domElement.addEventListener('pointerdown',down);renderer.domElement.addEventListener('pointermove',move);renderer.domElement.addEventListener('pointerup',up);renderer.domElement.addEventListener('pointercancel',up);renderer.domElement.addEventListener('lostpointercapture',up);renderer.domElement.addEventListener('wheel',wheel,{passive:false});
   function rehost(nextHost){
     if(destroyed)return;
     if(!(nextHost instanceof Element))throw new TypeError('rehost requires a DOM host');
-    resizeObserver.disconnect();intersectionObserver.disconnect();host=nextHost;host.append(renderer.domElement);
+    clearPointers();resizeObserver.disconnect();intersectionObserver.disconnect();host=nextHost;host.append(renderer.domElement);
     const r=host.getBoundingClientRect();inViewport=r.width>0&&r.height>0&&r.bottom>0&&r.right>0&&r.top<innerHeight&&r.left<innerWidth;
     resizeObserver.observe(host);intersectionObserver.observe(host);if(!inViewport)stop();resize();
   }
@@ -148,5 +181,5 @@ export function mountSpatial(host){
   function seek(seconds){if(destroyed)return;sampleTime=Number.isFinite(Number(seconds))?Math.max(0,Number(seconds)):0;clock=sampleTime;manualTheta=0;manualPhi=0;manualUntil=0;stop();resize(false);light(0,true);position(0,true,sampleTime);renderer.render(scene,camera);frames++;}
   rebuild();resize();
   texture=new THREE.TextureLoader().load(new URL('../assets/images/timeline-la-full.webp',import.meta.url).href,()=>drawOnce());texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=2;mats.screen.map=texture;mats.screen.needsUpdate=true;
-  return {update,rehost,prepare,seek,snapshot,dispose(){if(destroyed)return;destroyed=true;stop();resizeObserver.disconnect();intersectionObserver.disconnect();document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',reducedChange);disposeGroup();Object.values(mats).forEach(m=>m.dispose());texture?.dispose();renderer.dispose();renderer.domElement.remove()},get stats(){return{...state,sampleTime,revealProgress:reveal,inViewport,activeLoop:!!raf,frames,fps:Math.round(fps*10)/10,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,pixelRatio:renderer.getPixelRatio(),canvasCount:host.querySelectorAll('canvas').length,camera:camera.position.toArray(),reducedMotion:reduced.matches}},get canvas(){return renderer.domElement}};
+  return {update,rehost,prepare,seek,snapshot,dispose(){if(destroyed)return;clearPointers();destroyed=true;stop();resizeObserver.disconnect();intersectionObserver.disconnect();document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',reducedChange);disposeGroup();Object.values(mats).forEach(m=>m.dispose());texture?.dispose();renderer.dispose();renderer.domElement.remove()},get stats(){return{...state,sampleTime,revealProgress:reveal,inViewport,activeLoop:!!raf,frames,fps:Math.round(fps*10)/10,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,pixelRatio:renderer.getPixelRatio(),canvasCount:host.querySelectorAll('canvas').length,camera:camera.position.toArray(),zoom:camera.zoom,activePointers:pointers.size,reducedMotion:reduced.matches}},get canvas(){return renderer.domElement}};
 }

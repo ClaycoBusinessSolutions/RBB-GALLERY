@@ -95,7 +95,7 @@
   .hope-gallery__caption{font-size:16px}.hope-gallery__count{font-size:12px}
   .hope-gallery__credits,.hope-gallery__sources,.hope-gallery__story>.hope-gallery__photo-note{font-size:13px;line-height:1.5}
   .hope-gallery__sources a{display:inline-block;padding-block:8px}
-  /* Source renderings and a compact key plan lead the spatial discussion. */
+  /* Scroll from the source rendering into the interactive spatial study. */
   .space-overview .scene-inner,.space-opportunity .scene-inner{display:flex;flex-direction:column;gap:24px}
   .space-overview .eyebrow,.space-opportunity .eyebrow{order:0;margin:0}
   .space-overview h2,.space-opportunity h2{order:1}
@@ -111,13 +111,11 @@
   .space-overview__scope,.space-opportunity__scope{position:static;order:8;font-size:12px;line-height:1.5;margin:0;opacity:.7}
   .space-opportunity__reference{position:relative;inset:auto;width:100%;height:auto;order:3;aspect-ratio:16/10;min-height:180px}
   .space-opportunity__reference img{width:100%;height:100%;object-fit:contain;object-position:center}
-  .space-keymap{position:relative;inset:auto;width:100%;height:auto;order:5;align-self:flex-end;max-width:260px;margin:0;padding:0!important}
-  .space-keymap svg{height:130px}.space-keymap__label{font-size:13px;min-height:44px;display:flex;justify-content:flex-end;align-items:center;padding:0}
-  .space-opportunity__model{display:none}.space-opportunity__status{display:none}
-  .space-opportunity__controls{position:static;order:4;display:flex;flex-wrap:wrap;gap:10px}
-  .space-opportunity__control-group{gap:4px;max-width:100%}.space-opportunity__control-group button{font-size:13px;min-height:44px;min-width:44px;padding:8px 10px}
-  .space-opportunity__control-group[aria-label="View"],.space-opportunity__control-group[aria-label="Lighting"]{display:none}
-  .space-opportunity--fallback .space-opportunity__controls{display:flex}
+  .space-keymap{position:relative;inset:auto;width:100%;height:auto;order:6;align-self:flex-end;max-width:260px;margin:0;padding:0!important}
+  .space-keymap>svg.lp-drawing{height:130px}.space-keymap__label{font-size:13px;min-height:44px;display:flex;justify-content:flex-end;align-items:center;padding:0}
+  .space-opportunity__model{display:block;position:relative;inset:auto;order:4;width:100%;height:clamp(260px,86vw,400px);flex:none;isolation:isolate;touch-action:none}
+  .space-opportunity__status{display:block;position:static;order:5;max-width:100%;font-size:13px;line-height:1.5;margin:-12px 0 0}
+  .space-opportunity__controls,.space-opportunity--fallback .space-opportunity__controls{display:none}
   .collaboration-invitation .scene-inner{display:flex;flex-direction:column;gap:28px}
   .collaboration-invitation .eyebrow{margin:0}
   .collaboration-invitation__lead{position:static;margin:0;font-size:22px;line-height:1.4}

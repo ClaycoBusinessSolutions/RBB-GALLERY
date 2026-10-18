@@ -1,13 +1,13 @@
-@import url('./location-plan.css?v=75e67ad789dd740133a8');
+@import url('./location-plan.css?v=b8dd759122559fa0408e');
 
 /* Potential RBB settings: quiet source-led studies, one shared font system. */
 .space-overview,.space-opportunity{background:var(--paper);color:#000}
 .space-overview .keep-words,.space-opportunity .keep-words{white-space:nowrap}
 .space-overview .eyebrow,.space-opportunity .eyebrow{position:absolute;left:100px;top:86px;font-size:25px;letter-spacing:.08em;font-weight:400}
-.space-overview h2{position:absolute;left:100px;top:200px;font-size:112px;line-height:1.05;white-space:nowrap}
-.space-overview__copy{position:absolute;left:105px;top:415px;width:475px;font-size:46px;line-height:1.18;letter-spacing:-.035em;margin:0;text-wrap:pretty}
+.space-overview h2{position:absolute;left:100px;top:165px;font-size:86px;line-height:1.05;white-space:nowrap}
+.space-overview__copy{position:absolute;left:105px;top:285px;width:1715px;font-size:32px;line-height:1.25;letter-spacing:-.025em;margin:0;text-wrap:pretty}
 .space-overview__copy p{margin:0}
-.space-overview__plan{position:absolute;left:670px;top:330px;width:1150px;height:585px}
+.space-overview__plan{position:absolute;left:105px;top:365px;width:1715px;height:535px}
 .space-overview__plan .lp-legend{margin-top:20px}
 .space-overview__plan .lp-legend-name{font-size:26px}
 .space-overview__plan .lp-legend-detail{font-size:18px}
@@ -71,3 +71,14 @@
 .space-opportunity--night .space-keymap{--lp-ink:var(--paper);color:var(--paper)}
 
 .space-opportunity__scope{left:105px;right:auto;bottom:132px;font-size:15px}
+
+/* Overview: the two choices form a left-hand index beside the shared plan. */
+@media(min-width:901px){
+ .space-overview__copy p{white-space:nowrap}
+ .space-overview__plan{display:grid;grid-template-columns:430px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;column-gap:70px}
+ .space-overview__plan>.lp-drawing{grid-column:2;grid-row:1;width:100%;height:100%}
+ .space-overview__plan .lp-legend{grid-column:1;grid-row:1;grid-template-columns:1fr;align-self:center;margin-top:0}
+ .space-overview__plan .lp-location{padding:28px 22px}
+ .space-overview__plan .lp-location+.lp-location{border-left:0;border-top:1px solid #25262240}
+ .space-overview__plan .lp-source-note{grid-column:2;grid-row:2;margin-top:16px}
+}

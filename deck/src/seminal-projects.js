@@ -1,5 +1,5 @@
 /** Source-backed details layered over the continuous project stream. */
-import { mountProjectStream } from './project-queue.js?v=c19696f3a22b927e9f04';
+import { mountProjectStream } from './project-queue.js?v=d4dd401648c2688753cf';
 const SELECTORS = { button: 'button[data-project-id]' };
 
 export function createSeminalProjects({ onOpen, onClose } = {}) {
@@ -31,7 +31,7 @@ export function createSeminalProjects({ onOpen, onClose } = {}) {
         <h2 id="seminal-project-title"></h2>
         <p class="seminal-project-dialog__meaning"></p>
         <p class="seminal-project-dialog__scope"></p>
-        <a class="seminal-project-dialog__source" target="_blank" rel="noopener noreferrer">View project on Clayco <span aria-hidden="true">↗</span></a>
+        <a class="seminal-project-dialog__source" target="_blank" rel="noopener noreferrer">View project on Clayco <span aria-hidden="true"><svg class="line-arrow" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M5 19 19 5M6 5h13v13"/></svg></span></a>
         <div class="seminal-project-dialog__members" aria-label="Projects in this group" hidden></div>
       </div>
     </div>

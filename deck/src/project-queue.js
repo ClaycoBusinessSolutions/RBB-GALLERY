@@ -76,7 +76,7 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
       });
       const card = document.createElement('button');
       card.type = 'button'; card.className = 'project-stream__card'; card.dataset.projectId = id;
-      card.innerHTML = '<span class="project-stream__photo"><img alt="" decoding="async" draggable="false"><span class="project-stream__image-type" hidden></span></span><span class="project-stream__caption"><span class="project-stream__name"></span><span class="project-stream__location"></span><span class="project-stream__arrow" aria-hidden="true">↗</span></span>';
+      card.innerHTML = '<span class="project-stream__photo"><img alt="" decoding="async" draggable="false"><span class="project-stream__image-type" hidden></span></span><span class="project-stream__caption"><span class="project-stream__name"></span><span class="project-stream__location"></span><span class="project-stream__arrow" aria-hidden="true"><svg class="line-arrow" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M5 19 19 5M6 5h13v13"/></svg></span></span>';
       card.addEventListener('click', event => {
         event.stopPropagation();
         if (enabled && !destroyed) onInspect?.(card);

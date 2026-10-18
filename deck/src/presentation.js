@@ -1,13 +1,13 @@
-import { mountArtField } from './art-field.js?v=c19696f3a22b927e9f04';
-import { mountProjectField } from './project-field.js?v=c19696f3a22b927e9f04';
-import { mountArcTransition } from './arc-transition.js?v=c19696f3a22b927e9f04';
-import { mountMuseumMenu } from './museum-menu.js?v=c19696f3a22b927e9f04';
-import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=c19696f3a22b927e9f04';
-import { createSeminalProjects } from './seminal-projects.js?v=c19696f3a22b927e9f04';
-import { isProjectSequence } from './project-sequence.js?v=c19696f3a22b927e9f04';
-import { createHopeGallery } from './hope-gallery.js?v=c19696f3a22b927e9f04';
-import { createSpaceOpportunities } from './space-opportunities.js?v=c19696f3a22b927e9f04';
-import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=c19696f3a22b927e9f04';
+import { mountArtField } from './art-field.js?v=d4dd401648c2688753cf';
+import { mountProjectField } from './project-field.js?v=d4dd401648c2688753cf';
+import { mountArcTransition } from './arc-transition.js?v=d4dd401648c2688753cf';
+import { mountMuseumMenu } from './museum-menu.js?v=d4dd401648c2688753cf';
+import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=d4dd401648c2688753cf';
+import { createSeminalProjects } from './seminal-projects.js?v=d4dd401648c2688753cf';
+import { isProjectSequence } from './project-sequence.js?v=d4dd401648c2688753cf';
+import { createHopeGallery } from './hope-gallery.js?v=d4dd401648c2688753cf';
+import { createSpaceOpportunities } from './space-opportunities.js?v=d4dd401648c2688753cf';
+import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=d4dd401648c2688753cf';
 
 const $ = selector => document.querySelector(selector);
 const scenes = [...document.querySelectorAll('.scene')];
@@ -122,7 +122,7 @@ async function prepareScene(scene) {
  await Promise.allSettled([prepareCover(scene), hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
  if (scene.dataset.compositionId === 'office-art') {
   const generation = fieldGeneration;
-  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=c19696f3a22b927e9f04').then(async ({ mountWavyAccordion }) => {
+  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=d4dd401648c2688753cf').then(async ({ mountWavyAccordion }) => {
    if (generation !== fieldGeneration) return null;
    const root = scene.querySelector('[data-wavy-accordion-init]');
    officeAccordion = mountWavyAccordion(root, { onSelect: index => openOfficePhoto(root, index) });

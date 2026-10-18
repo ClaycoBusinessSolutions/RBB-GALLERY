@@ -15,6 +15,6 @@
 .project-stream__caption { position:relative; display:block; min-height:60px; padding:13px 23px 0 0; }
 .project-stream__name { display:block; font-size:22px; line-height:1.2; font-weight:400; letter-spacing:-.02em; text-wrap:pretty; }
 .project-stream__location { display:block; margin-top:6px; color:#aaa; font-size:14px; line-height:1.3; }
-.project-stream__arrow { position:absolute; right:0; top:14px; color:#999; font-size:19px; line-height:1; }
+.project-stream__arrow { position:absolute; right:0; top:14px; color:#fff; font-size:19px; line-height:1; }
 .project-stream__card:hover .project-stream__arrow { color:#fff; }
 @media(prefers-reduced-motion:reduce) { .project-stream__track { will-change:auto; } }

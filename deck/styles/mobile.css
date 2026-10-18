@@ -100,7 +100,7 @@
   .space-overview .eyebrow,.space-opportunity .eyebrow{order:0;margin:0}
   .space-overview h2,.space-opportunity h2{order:1}
   .space-overview__copy,.space-opportunity__copy{position:static;width:auto;order:2;font-size:18px;line-height:1.5;margin:0}
-  .space-overview__copy p{margin:0;font-size:26px;line-height:1.25;letter-spacing:-.025em}
+  .space-overview__copy p{margin:0;font-size:20px;line-height:1.25;letter-spacing:-.025em}
   .space-opportunity__copy>span{display:inline;white-space:normal}
   .space-opportunity__copy>span+span::before{content:" "}
   .space-overview__plan{position:relative;inset:auto;width:100%;height:auto;order:3;min-height:220px}

@@ -1,4 +1,4 @@
-@import url('./location-plan.css?v=81fcaf0d3663d90fa8c2');
+@import url('./location-plan.css?v=75e67ad789dd740133a8');
 
 /* Potential RBB settings: quiet source-led studies, one shared font system. */
 .space-overview,.space-opportunity{background:var(--paper);color:#000}
@@ -37,7 +37,7 @@
 .space-opportunity__control-group button{font-size:18px;padding:8px 12px;min-width:54px}
 .space-opportunity__control-group button[aria-pressed="true"]{background:#000;color:var(--paper)}
 .space-opportunity__status{position:absolute;left:1080px;top:940px;font-size:16px;line-height:1.35;margin:0;max-width:680px;opacity:.6}
-.space-opportunity__scope,.space-overview__scope{position:absolute;left:105px;right:105px;bottom:56px;font-size:17px;line-height:1.35;margin:0;opacity:.6}
+.space-opportunity__scope,.space-overview__scope{position:absolute;left:105px;right:105px;bottom:132px;font-size:17px;line-height:1.35;margin:0;opacity:.6}
 .space-opportunity__existing{position:absolute;right:540px;top:85px;font-size:23px;padding:0 0 8px;border-bottom:1px solid currentColor!important}
 .space-keymap{position:absolute;right:90px;top:35px;width:250px;height:155px;padding:0!important;background:none;text-align:left;z-index:3;--lp-ink:#000}
 .space-keymap>svg.lp-drawing{display:block;width:100%;height:120px;flex:none;overflow:visible}
@@ -70,4 +70,4 @@
 
 .space-opportunity--night .space-keymap{--lp-ink:var(--paper);color:var(--paper)}
 
-.space-opportunity__scope{left:105px;right:auto;bottom:72px;font-size:15px}
+.space-opportunity__scope{left:105px;right:auto;bottom:132px;font-size:15px}

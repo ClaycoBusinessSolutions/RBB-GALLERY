@@ -1,4 +1,4 @@
-import { mountLocationPlan } from './location-plan.js?v=81fcaf0d3663d90fa8c2';
+import { mountLocationPlan } from './location-plan.js?v=75e67ad789dd740133a8';
 
 // The RBB concepts are a conversation about possibilities, not a venue decision.
 // Geometry is built by the existing small procedural study; no Rhino or video
@@ -134,7 +134,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
  }
  function loadModel(host) {
   if (!modelPromise) {
-   modelPromise = import('./spatial.js?v=81fcaf0d3663d90fa8c2').then(({ mountSpatial }) => {
+   modelPromise = import('./spatial.js?v=75e67ad789dd740133a8').then(({ mountSpatial }) => {
     if (disposed) return null;
     model = mountSpatial(host);
     model.update({ active: false, motion: false, reveal: false });

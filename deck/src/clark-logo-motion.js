@@ -145,7 +145,8 @@ export function createClarkLogoMotion(host) {
       paused = false;
       if (overlay) start();
       else {
-        image.style.opacity = '0';
+        // Keep the original readable while the optional animation asset loads.
+        image.style.opacity = originalOpacity;
         host.dataset.logoMotion = 'pending';
       }
     },

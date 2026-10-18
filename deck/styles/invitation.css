@@ -57,3 +57,14 @@
 .line-arrow{display:inline-block;width:1em;height:1em;vertical-align:-.12em;fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .project-cover .line-arrow,.clark-cover .line-arrow{color:#fff}
 .project-cover .invitation-cover__begin .line-arrow,.clark-cover .begin .line-arrow{width:20px;height:20px}
+
+/* Desktop utility controls at 1.5 times their original size. */
+@media(min-width:901px){
+  #slide-navigation{font-size:19.5px}
+  #slide-navigation button{font-size:19.5px;padding:16.5px 21px}
+  #slide-navigation #nav-menu>span{font-size:15px;margin-left:19.5px}
+  .slide-navigation__steps{gap:22.5px}
+  #nav-count{font-size:16.5px}
+  #slide-navigation #nav-prev,#slide-navigation #nav-next{min-width:72px;min-height:72px;padding:18px}
+  #slide-navigation .nav-arrow{width:36px;height:36px}
+}

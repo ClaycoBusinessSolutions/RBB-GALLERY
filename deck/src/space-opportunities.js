@@ -1,4 +1,4 @@
-import { mountLocationPlan } from './location-plan.js?v=d26af05fb1cc2e070883';
+import { mountLocationPlan } from './location-plan.js?v=81fcaf0d3663d90fa8c2';
 
 // The RBB concepts are a conversation about possibilities, not a venue decision.
 // Geometry is built by the existing small procedural study; no Rhino or video
@@ -29,7 +29,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   return plan;
  }
  function sceneState(scene) {
-  return phone.matches ? { option: DEFAULTS[scene.dataset.spaceOpportunity], view: 'axon', lighting: 'day' } : states.get(scene);
+  return states.get(scene);
  }
  function modelState(scene) { const state = sceneState(scene); return { ...state, azimuth: AZIMUTHS[state.option] }; }
  function ensureKeymaps() {
@@ -113,11 +113,6 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   if (!state) return;
   scene.classList.toggle('space-opportunity--mobile', phone.matches);
   scene.classList.toggle('space-opportunity--night', !phone.matches && state.lighting === 'night');
-  for (const [attribute, key] of [['spaceOption','option'], ['spaceView','view'], ['spaceLight','lighting']]) {
-   scene.querySelectorAll(`[data-${attribute.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}]`).forEach(button => {
-    button.setAttribute('aria-pressed', String(button.dataset[attribute] === state[key]));
-   });
-  }
   const reference = REFERENCES[state.option];
   for (const image of scene.querySelectorAll('[data-space-reference-image], [data-space-fallback]')) {
    if (image.src !== reference.src) image.src = reference.src;
@@ -126,9 +121,6 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   const caption = scene.querySelector('[data-space-reference-caption]');
   if (caption) caption.textContent = reference.credit;
   scene.querySelector('[data-space-model]')?.setAttribute('aria-label', `${reference.title}. Illustrative spatial study; drag to rotate, ${phone.matches ? 'pinch' : 'scroll'} to zoom.`);
-  if (!scene.classList.contains('space-opportunity--fallback')) {
-   scene.querySelector('[data-space-status]').innerHTML = `Illustrative spatial study<br>${phone.matches ? 'Drag to rotate · pinch to zoom' : 'Drag to explore · scroll to zoom'}`;
-  }
  }
  function freezePrevious(nextScene) {
   if (!modelScene || modelScene === nextScene || !model) return;
@@ -142,7 +134,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
  }
  function loadModel(host) {
   if (!modelPromise) {
-   modelPromise = import('./spatial.js?v=d26af05fb1cc2e070883').then(({ mountSpatial }) => {
+   modelPromise = import('./spatial.js?v=81fcaf0d3663d90fa8c2').then(({ mountSpatial }) => {
     if (disposed) return null;
     model = mountSpatial(host);
     model.update({ active: false, motion: false, reveal: false });
@@ -170,8 +162,15 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   if (disposed || generation !== modelGeneration) return;
   if (!instance) {
    scene.classList.add('space-opportunity--fallback');
-   const status = scene.querySelector('[data-space-status]');
-   if (status) status.textContent = 'Original concept rendering · spatial view unavailable in this browser';
+   let status = scene.querySelector('[data-space-status]');
+   if (!status) {
+    status = document.createElement('p');
+    status.className = 'space-opportunity__status';
+    status.setAttribute('data-space-status', '');
+    status.setAttribute('role', 'status');
+    host.after(status);
+   }
+   status.textContent = 'Original concept rendering · spatial view unavailable in this browser';
    return;
   }
   freezePrevious(scene);
@@ -239,15 +238,6 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
    openReference(button.dataset.spaceReference || (isSpace(scene) ? sceneState(scene).option : 'plan'), button);
    return;
   }
-  if (!isSpace(scene)) return;
-  const state = states.get(scene);
-  if (button.dataset.spaceOption) state.option = button.dataset.spaceOption;
-  else if (button.dataset.spaceView) state.view = button.dataset.spaceView;
-  else if (button.dataset.spaceLight) state.lighting = button.dataset.spaceLight;
-  else return;
-  sync(scene);
-  if (!phone.matches && modelScene === scene) model?.update({ ...modelState(scene), active: activeScene === scene, motion, reveal: false });
-  scene.dispatchEvent(new CustomEvent('space-opportunity-change', { bubbles: true, detail: { ...state } }));
  }
  function seek(scene, seconds = 0) {
   if (scene === overview) ensurePlan()?.seek(seconds);

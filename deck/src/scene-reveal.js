@@ -44,9 +44,17 @@ export function addSceneReveal(parent, scene, { instant = false, direction = 1, 
   if (visuals.length) timeline.fromTo(visuals, { clipPath: 'inset(0% 0% 100% 0%)', y: 28 * direction }, {
     clipPath: 'inset(0% 0% 0% 0%)', y: 0, duration: 1, stagger: .06
   }, 'image');
-  if (heading) timeline.fromTo(heading, { autoAlpha: 0, y: 35 * direction, clipPath: 'inset(0% 0% 100% 0%)' }, {
-    autoAlpha: 1, y: 0, clipPath: 'inset(0% 0% 0% 0%)', duration: .95
-  }, 'title');
+  if (heading) {
+    // Tight editorial line boxes can be smaller than the glyph ink. Reveal the
+    // overshoot too, so removing the mask never pops in the bottoms of letters.
+    // Use unscaled layout pixels: the whole presentation stage may be scaled.
+    const bleed = Math.ceil(parseFloat(getComputedStyle(heading).fontSize) * .25);
+    const hidden = `inset(${-bleed}px ${-bleed}px ${heading.offsetHeight + bleed}px ${-bleed}px)`;
+    const visible = `inset(${-bleed}px ${-bleed}px ${-bleed}px ${-bleed}px)`;
+    timeline.fromTo(heading, { autoAlpha: 0, y: 35 * direction, clipPath: hidden }, {
+      autoAlpha: 1, y: 0, clipPath: visible, duration: .95
+    }, 'title');
+  }
   if (copy.length) timeline.fromTo(copy, { autoAlpha: 0, y: 18 * direction }, { autoAlpha: 1, y: 0, stagger: { amount: .16 }, duration: .72 }, 'copy');
   if (controls.length) timeline.fromTo(controls, { autoAlpha: 0, y: 10 * direction }, { autoAlpha: 1, y: 0, duration: .5 }, .85);
   timeline.call(() => settleSceneReveal(scene));

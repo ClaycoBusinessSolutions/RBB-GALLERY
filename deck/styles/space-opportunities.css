@@ -1,4 +1,4 @@
-@import url('./location-plan.css?v=de5c49ac8812090e1b07');
+@import url('./location-plan.css?v=174b0d2663d36979cd38');
 
 /* Potential RBB settings: quiet source-led studies, one shared font system. */
 .space-overview,.space-opportunity{background:var(--paper);color:#000}
@@ -40,7 +40,7 @@
 .space-opportunity__scope,.space-overview__scope{position:absolute;left:105px;right:105px;bottom:56px;font-size:17px;line-height:1.35;margin:0;opacity:.6}
 .space-opportunity__existing{position:absolute;right:540px;top:85px;font-size:23px;padding:0 0 8px;border-bottom:1px solid currentColor!important}
 .space-keymap{position:absolute;right:90px;top:40px;width:340px;height:185px;padding:0!important;background:none;text-align:left;z-index:3;--lp-ink:#000}
-.space-keymap svg{display:block;width:100%;height:155px;flex:none;overflow:visible}
+.space-keymap>svg.lp-drawing{display:block;width:100%;height:155px;flex:none;overflow:visible}
 .space-keymap .lp-map-labels{opacity:0}
 .space-keymap .lp-zone{opacity:.22!important}
 .space-keymap .lp-zone.is-current{opacity:1!important}

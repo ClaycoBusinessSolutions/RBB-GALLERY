@@ -1,4 +1,4 @@
-import { mountLocationPlan } from './location-plan.js?v=de5c49ac8812090e1b07';
+import { mountLocationPlan } from './location-plan.js?v=174b0d2663d36979cd38';
 
 // The RBB concepts are a conversation about possibilities, not a venue decision.
 // Geometry is built by the existing small procedural study; no Rhino or video
@@ -19,7 +19,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
  const phone = matchMedia('(max-width: 900px)');
  const states = new Map(scenes.map(scene => [scene, { option: DEFAULTS[scene.dataset.spaceOpportunity], view: 'axon', lighting: 'day' }]));
  let activeScene = null, modelScene = null, model = null, modelPromise = null, plan = null;
- let motion = true, disposed = false, dialog = null, dialogOpener = null, mapTransition = null;
+ let motion = true, disposed = false, dialog = null, dialogOpener = null, mapTransition = null, modelGeneration = 0;
 
  function isSpace(scene) { return states.has(scene); }
  function ensurePlan() {
@@ -28,14 +28,17 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   }
   return plan;
  }
- function modelState(scene) { const state = states.get(scene); return { ...state, azimuth: AZIMUTHS[state.option] }; }
+ function sceneState(scene) {
+  return phone.matches ? { option: DEFAULTS[scene.dataset.spaceOpportunity], view: 'axon', lighting: 'day' } : states.get(scene);
+ }
+ function modelState(scene) { const state = sceneState(scene); return { ...state, azimuth: AZIMUTHS[state.option] }; }
  function ensureKeymaps() {
   ensurePlan();
   const source = overview?.querySelector('[data-space-plan] svg');
   if (!source) return;
   for (const scene of scenes) {
    const host = scene.querySelector('[data-space-keymap]');
-   if (!host || host.querySelector('svg')) continue;
+   if (!host || host.querySelector(':scope > svg.lp-drawing')) continue;
    const svg = source.cloneNode(true), prefix = `${scene.dataset.compositionId}-keymap`;
    svg.querySelector('title').id = `${prefix}-title`;
    svg.querySelector('desc').id = `${prefix}-description`;
@@ -47,7 +50,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   }
  }
  function mapFor(scene) {
-  return scene?.querySelector('[data-space-plan] svg, [data-space-keymap] svg');
+  return scene?.querySelector('[data-space-plan] svg.lp-drawing, [data-space-keymap] > svg.lp-drawing');
  }
  function mapBounds(svg) {
   const stage = document.querySelector('#stage'), inner = svg.closest('.scene-inner');
@@ -106,7 +109,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   return mapTransition;
  }
  function sync(scene) {
-  const state = states.get(scene);
+  const state = sceneState(scene);
   if (!state) return;
   scene.classList.toggle('space-opportunity--mobile', phone.matches);
   scene.classList.toggle('space-opportunity--night', !phone.matches && state.lighting === 'night');
@@ -122,7 +125,10 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   }
   const caption = scene.querySelector('[data-space-reference-caption]');
   if (caption) caption.textContent = reference.credit;
-  scene.querySelector('[data-space-model]')?.setAttribute('aria-label', `${reference.title}. Illustrative spatial study; drag to explore.`);
+  scene.querySelector('[data-space-model]')?.setAttribute('aria-label', `${reference.title}. Illustrative spatial study; drag to rotate, ${phone.matches ? 'pinch' : 'scroll'} to zoom.`);
+  if (!scene.classList.contains('space-opportunity--fallback')) {
+   scene.querySelector('[data-space-status]').innerHTML = `Illustrative spatial study<br>${phone.matches ? 'Drag to rotate · pinch to zoom' : 'Drag to explore · scroll to zoom'}`;
+  }
  }
  function freezePrevious(nextScene) {
   if (!modelScene || modelScene === nextScene || !model) return;
@@ -136,11 +142,11 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
  }
  function loadModel(host) {
   if (!modelPromise) {
-   modelPromise = import('./spatial.js?v=de5c49ac8812090e1b07').then(({ mountSpatial }) => {
+   modelPromise = import('./spatial.js?v=174b0d2663d36979cd38').then(({ mountSpatial }) => {
     if (disposed) return null;
     model = mountSpatial(host);
     model.update({ active: false, motion: false, reveal: false });
-    model.canvas.setAttribute('aria-label', 'Interactive conceptual RBB space study. Drag to rotate; scroll to zoom.');
+    model.canvas.setAttribute('aria-label', 'Interactive conceptual RBB space study. Drag to rotate; pinch or scroll to zoom.');
     return model;
    }).catch(error => {
     console.warn('RBB spatial study could not start; original concept images remain available.', error);
@@ -150,18 +156,18 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   return modelPromise;
  }
  async function prepare(scene) {
+  const generation = ++modelGeneration;
   if (disposed) return;
   if (scene === overview) { ensurePlan(); return; }
   if (!isSpace(scene)) return;
   ensureKeymaps();
   sync(scene);
-  // Keep the supplied concept renderings and connected SVG keymap on phones.
-  // Never import spatial.js or allocate its WebGL renderer for this mode.
-  if (phone.matches) { model?.update({ active: false, motion: false }); return; }
+  // Phones use the same lightweight model, rendered on demand without ambient motion.
   await Promise.allSettled([...scene.querySelectorAll('[data-space-reference-image]')].map(image => { image.loading = 'eager'; return image.decode(); }));
+  if (disposed || generation !== modelGeneration) return;
   const host = scene.querySelector('[data-space-model]');
   const instance = await loadModel(host);
-  if (disposed) return;
+  if (disposed || generation !== modelGeneration) return;
   if (!instance) {
    scene.classList.add('space-opportunity--fallback');
    const status = scene.querySelector('[data-space-status]');
@@ -179,13 +185,13 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
  }
  function activate(scene, { motion: enabled = true } = {}) {
   if (disposed) return;
+  ++modelGeneration;
   motion = enabled !== false && !phone.matches;
   activeScene = scene;
   plan?.setActive(scene === overview, { motion });
   if (scene === overview) ensurePlan()?.setActive(true, { motion });
   if (!isSpace(scene)) { model?.update({ active: false }); return; }
   sync(scene);
-  if (phone.matches) { model?.update({ active: false, motion: false }); return; }
   if (model && modelScene === scene) {
    scene.querySelector('[data-space-snapshot]').hidden = true;
    model.update({ ...modelState(scene), active: true, motion, reveal: false });
@@ -196,6 +202,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   }
  }
  function pause() {
+  ++modelGeneration;
   activeScene = null;
   plan?.setActive(false);
   model?.update({ active: false });
@@ -229,7 +236,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   if (!scene || (scene !== overview && !isSpace(scene))) return;
   if (button.hasAttribute('data-space-overview-link')) { onNavigate?.('opportunities-plan'); return; }
   if (button.hasAttribute('data-space-reference')) {
-   openReference(button.dataset.spaceReference || states.get(scene)?.option || 'plan', button);
+   openReference(button.dataset.spaceReference || (isSpace(scene) ? sceneState(scene).option : 'plan'), button);
    return;
   }
   if (!isSpace(scene)) return;

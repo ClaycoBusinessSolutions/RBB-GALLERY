@@ -1,4 +1,4 @@
-/* Reveal the official artwork without redrawing its lettering or changing its layout. */
+/* Keep the official lettering still while a quiet highlight travels over its frame. */
 const SVG_NS = 'http://www.w3.org/2000/svg';
 let nextLogoId = 0;
 
@@ -17,18 +17,16 @@ export function createClarkLogoMotion(host) {
 
   const originalOpacity = image.style.opacity;
   let overlay = null;
-  let frame = null;
-  let lettering = null;
+  let frameBase = null;
+  let frameTrace = null;
   let animations = [];
   let entered = false;
   let wantsMotion = true;
   let paused = false;
   let disposed = false;
   let unavailable = false;
-  let generation = 0;
 
   function settle() {
-    generation += 1;
     animations.forEach(animation => animation.cancel());
     animations = [];
     image.style.opacity = originalOpacity;
@@ -36,29 +34,38 @@ export function createClarkLogoMotion(host) {
     host.dataset.logoMotion = 'settled';
   }
 
+  function syncPlayback() {
+    if (!animations.length) return;
+    const shouldPause = doc.hidden || paused;
+    animations.forEach(animation => {
+      // A completed entry fade must not rewind when returning from the menu.
+      if (animation.playState !== 'finished') shouldPause ? animation.pause() : animation.play();
+    });
+    host.dataset.logoMotion = shouldPause ? 'paused' : 'running';
+  }
+
   function start() {
-    if (!entered || disposed || !overlay || !wantsMotion || reduced.matches) return;
-    settle();
-    const run = ++generation;
+    if (!entered || disposed || !overlay || !wantsMotion || reduced.matches || unavailable) return;
+    if (animations.length) {
+      syncPlayback();
+      return;
+    }
+
     image.style.opacity = '0';
     overlay.hidden = false;
-    host.dataset.logoMotion = 'running';
-
-    // The frame opens first; the original lettering then rises gently into it.
+    // The original frame remains present throughout. A narrow, feathered light
+    // passes over it, then rests outside the artwork before a seamless restart.
     animations = [
-      frame.animate([
-        { clipPath: 'inset(0 100% 0 0)', opacity: 0.4 },
-        { clipPath: 'inset(0 0% 0 0)', opacity: 1 }
-      ], { duration: 1250, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'both' }),
-      lettering.animate([
-        { transform: 'translateY(13px)', opacity: 0 },
-        { transform: 'translateY(0)', opacity: 1 }
-      ], { duration: 1280, delay: 480, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'both' })
+      frameBase.animate([{ opacity: 1 }, { opacity: 0.52 }], {
+        duration: 1100, easing: 'ease-out', fill: 'both'
+      }),
+      frameTrace.animate([
+        { transform: 'translateX(-160px)', offset: 0 },
+        { transform: 'translateX(564px)', offset: 0.8 },
+        { transform: 'translateX(564px)', offset: 1 }
+      ], { duration: 8800, iterations: Infinity, easing: 'linear' })
     ];
-    if (doc.hidden || paused) animations.forEach(animation => animation.pause());
-    Promise.all(animations.map(animation => animation.finished)).then(() => {
-      if (!disposed && generation === run) settle();
-    }).catch(() => {}); // Leaving the slide deliberately cancels the entry.
+    syncPlayback();
   }
 
   const ready = (async () => {
@@ -70,40 +77,49 @@ export function createClarkLogoMotion(host) {
       if (disposed) return false;
       if (svg.localName !== 'svg' || svg.querySelector('parsererror')) throw new Error('Invalid logo artwork');
 
-      // Keep every original path: the framed asset has one stroked frame path,
-      // two black registration corrections, and white letter paths.
-      const paths = [...svg.querySelectorAll(':scope > path')];
+      // The derived transparent asset holds the untouched source geometry in its
+      // luminance mask. Reading the original asset is supported as a fallback.
+      const artwork = svg.querySelector('[data-clark-source]') || svg;
+      const paths = [...artwork.children].filter(child => child.localName === 'path');
       const originalFrame = paths.find(path => path.hasAttribute('stroke'));
       const letters = paths.filter(path => !path.hasAttribute('stroke') && path.getAttribute('fill') === 'white');
       if (!originalFrame || !letters.length) throw new Error('Unrecognized logo artwork');
 
-      const animatedSvg = doc.importNode(svg, true);
-      animatedSvg.setAttribute('aria-hidden', 'true');
-      animatedSvg.setAttribute('focusable', 'false');
-      animatedSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-      animatedSvg.removeAttribute('id');
-      const copiedPaths = [...animatedSvg.querySelectorAll(':scope > path')];
-      frame = doc.createElementNS(SVG_NS, 'g');
-      frame.classList.add('clark-logo-motion__frame');
-      lettering = doc.createElementNS(SVG_NS, 'g');
-      lettering.classList.add('clark-logo-motion__lettering');
-      copiedPaths.forEach(path => {
-        (path.hasAttribute('stroke') || path.getAttribute('fill') !== 'white' ? frame : lettering).append(path);
+      function element(name, attributes = {}) {
+        const node = doc.createElementNS(SVG_NS, name);
+        Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, value));
+        return node;
+      }
+      const id = ++nextLogoId;
+      const maskId = `clark-frame-${id}`;
+      const gradientId = `clark-frame-light-${id}`;
+      const animatedSvg = element('svg', {
+        viewBox: svg.getAttribute('viewBox'), fill: 'none',
+        'aria-hidden': 'true', focusable: 'false', preserveAspectRatio: 'xMidYMid meet'
       });
-
-      const defs = doc.createElementNS(SVG_NS, 'defs');
-      const clip = doc.createElementNS(SVG_NS, 'clipPath');
-      const clipId = `clark-logo-lettering-${++nextLogoId}`;
-      clip.id = clipId;
-      clip.setAttribute('clipPathUnits', 'userSpaceOnUse');
-      const rect = doc.createElementNS(SVG_NS, 'rect');
-      Object.entries({ x: 24, y: 38, width: 356, height: 42 }).forEach(([key, value]) => rect.setAttribute(key, value));
-      clip.append(rect);
-      defs.append(clip);
-      const letteringWindow = doc.createElementNS(SVG_NS, 'g');
-      letteringWindow.setAttribute('clip-path', `url(#${clipId})`);
-      letteringWindow.append(lettering);
-      animatedSvg.append(defs, frame, letteringWindow);
+      const defs = element('defs');
+      const mask = element('mask', {
+        id: maskId, x: 0, y: 0, width: 404, height: 118,
+        maskUnits: 'userSpaceOnUse', style: 'mask-type:luminance'
+      });
+      paths.filter(path => path.hasAttribute('stroke') || path.getAttribute('fill') !== 'white')
+        .forEach(path => mask.append(doc.importNode(path, true)));
+      const gradient = element('linearGradient', { id: gradientId, x1: 0, x2: 1, y1: 0, y2: 0 });
+      [ [0, 0], [0.45, 1], [0.55, 1], [1, 0] ].forEach(([offset, opacity]) => {
+        gradient.append(element('stop', { offset, 'stop-color': 'white', 'stop-opacity': opacity }));
+      });
+      defs.append(mask, gradient);
+      const frame = element('g', { mask: `url(#${maskId})` });
+      frame.classList.add('clark-logo-motion__frame');
+      frameBase = element('rect', { width: 404, height: 118, fill: 'white' });
+      frameBase.classList.add('clark-logo-motion__frame-base');
+      frameTrace = element('rect', { x: -80, y: 0, width: 160, height: 118, fill: `url(#${gradientId})` });
+      frameTrace.classList.add('clark-logo-motion__frame-trace');
+      frame.append(frameBase, frameTrace);
+      const lettering = element('g');
+      lettering.classList.add('clark-logo-motion__lettering');
+      letters.forEach(path => lettering.append(doc.importNode(path, true)));
+      animatedSvg.append(defs, frame, lettering);
 
       overlay = doc.createElement('span');
       overlay.className = 'clark-logo-motion__overlay';
@@ -111,7 +127,7 @@ export function createClarkLogoMotion(host) {
       overlay.hidden = true;
       overlay.append(animatedSvg);
       wrapper.append(overlay);
-      if (entered && wantsMotion && !reduced.matches) start();
+      start();
       return true;
     } catch {
       unavailable = true;
@@ -121,11 +137,11 @@ export function createClarkLogoMotion(host) {
   })();
 
   function visibilityChanged() {
-    if (!entered) return;
-    animations.forEach(animation => doc.hidden || paused ? animation.pause() : animation.play());
+    if (entered) syncPlayback();
   }
   function motionPreferenceChanged() {
     if (reduced.matches) settle();
+    else start();
   }
   doc.addEventListener('visibilitychange', visibilityChanged);
   reduced.addEventListener('change', motionPreferenceChanged);
@@ -134,21 +150,16 @@ export function createClarkLogoMotion(host) {
     ready,
     enter({ motion = true } = {}) {
       if (disposed) return;
+      const wasEntered = entered;
+      entered = true;
       wantsMotion = motion;
+      if (!wasEntered) paused = false;
       if (!motion || reduced.matches || unavailable) {
-        entered = true;
         settle();
         return;
       }
-      if (entered) return; // Refreshes and resizes must not replay the logo.
-      entered = true;
-      paused = false;
       if (overlay) start();
-      else {
-        // Keep the original readable while the optional animation asset loads.
-        image.style.opacity = originalOpacity;
-        host.dataset.logoMotion = 'pending';
-      }
+      else host.dataset.logoMotion = 'pending';
     },
     leave() {
       entered = false;
@@ -157,15 +168,16 @@ export function createClarkLogoMotion(host) {
     },
     pause() {
       paused = true;
-      animations.forEach(animation => animation.pause());
+      syncPlayback();
     },
     resume() {
       paused = false;
-      if (entered && wantsMotion && !doc.hidden) animations.forEach(animation => animation.play());
+      start();
     },
     setMotion(enabled) {
       wantsMotion = enabled !== false;
       if (!wantsMotion || reduced.matches) settle();
+      else start();
     },
     settle,
     dispose() {

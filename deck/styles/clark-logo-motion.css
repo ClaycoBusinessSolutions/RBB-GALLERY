@@ -2,7 +2,7 @@
 .clark-logo-motion{position:relative;display:block;width:100%;height:100%}
 .clark-logo-motion__overlay{position:absolute;inset:0;display:block;pointer-events:none}
 .clark-logo-motion__overlay[hidden]{display:none}
-.clark-logo-motion__overlay>svg{display:block;width:100%;height:100%;overflow:visible}
-.clark-logo-motion__frame{transform-box:fill-box}
-.clark-logo-motion__lettering{transform-box:view-box;transform-origin:center}
-@media(prefers-reduced-motion:reduce){.clark-logo-motion__overlay{display:none}}
+.clark-logo-motion__overlay>svg{display:block;width:100%;height:100%;overflow:hidden}
+.clark-logo-motion__frame-base{opacity:.52}
+.clark-logo-motion__frame-trace{transform-box:view-box;will-change:transform}
+@media(prefers-reduced-motion:reduce){.clark-logo-motion__overlay{display:none}.clark-logo-motion>img{opacity:1!important}}

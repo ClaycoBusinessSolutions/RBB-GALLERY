@@ -1,4 +1,6 @@
-import * as THREE from '../vendor/three/build/three.module.js?v=6602206c8ffaac6ab19b';
+import * as THREE from '../vendor/three/build/three.module.js?v=4ae5914e049e138b769a';
+import { createSpatialFigures } from './spatial-figures.js?v=4ae5914e049e138b769a';
+import { createSpatialDisplay } from './spatial-display.js?v=4ae5914e049e138b769a';
 
 // Lightweight source-grounded 3D study. Metres from the original Rhino export.
 // These cutaways simplify boundaries, furnishings, model identities and lighting.
@@ -6,6 +8,15 @@ const BOUNDS={experience:[15.24,-11.8364,22.2758,1.651],prefunction:[-10.414,-1.
 const SCREEN=[[21.4144,-9.8553],[21.5134,-9.444],[21.5911,-9.0281],[21.6474,-8.6088],[21.682,-8.1871],[21.695,-7.7642],[21.6861,-7.3412],[21.6556,-6.9192],[21.6034,-6.4994],[21.5297,-6.0828],[21.4347,-5.6705],[21.3186,-5.2636],[21.1818,-4.8633],[21.0246,-4.4705]];
 const SHELF=[[21.7949,-3.7851],[21.5769,-3.3413],[21.3354,-2.9097],[21.0711,-2.4916],[20.7849,-2.0883],[20.4775,-1.7009],[20.1498,-1.3305],[19.8028,-.9782],[19.4374,-.645],[19.0547,-.3317],[18.6557,-.0395],[18.2417,.2311],[17.8139,.4791],[17.3733,.7038],[16.9214,.9046]];
 const clamp=THREE.MathUtils.clamp;
+const SWEEP_LEG_SECONDS=14,MANUAL_HOLD_MS=4500;
+// Sweep from one front-side edge to the other, never behind the exhibit.
+// The phase starts at the composed view; cosine gently reverses at both edges.
+function sweepAngle(seconds,option,azimuth){
+  const midpoint=option==='shelf'?-Math.PI/2:option==='wall'?-Math.PI:null;
+  if(midpoint===null)return(1-Math.cos(seconds*Math.PI/SWEEP_LEG_SECONDS))*Math.PI/2;
+  const phase=Math.acos(clamp((midpoint-azimuth)/(Math.PI/2),-1,1));
+  return midpoint-Math.cos(seconds*Math.PI/SWEEP_LEG_SECONDS+phase)*Math.PI/2-azimuth;
+}
 
 class Batch {
   constructor(materials){this.materials=materials;this.parts=new Map();this.boxGeometry=new THREE.BoxGeometry(1,1,1);this.matrix=new THREE.Matrix4();this.q=new THREE.Quaternion();this.s=new THREE.Vector3();this.p=new THREE.Vector3();}
@@ -60,7 +71,11 @@ function build(option,materials){
       for(let z=-.8;z<8.9;z+=2.35)b.box('ceiling',-8.7,3.42,z,2.8,.055,.63);
     }
     if(wall){
-      floor(BOUNDS.timeline);b.box('wall',-13.84,1.6,15.9,24.13,3.2,.16);
+      // Stop the cutaway at the exhibit itself; the former blank extension
+      // beyond the timeline is not part of this presentation study.
+      const [timelineStart,timelineFront,,timelineBack]=BOUNDS.timeline,timelineEnd=-7.3;
+      floor([timelineStart,timelineFront,timelineEnd,timelineBack]);
+      b.box('wall',(timelineStart+timelineEnd)/2,1.6,15.9,timelineEnd-timelineStart,3.2,.16);
       b.box('oak',-16.68,.78,15.64,18.0,1.5,.18);
       b.face('screen',[-25.6207,1.8766,15.51],[-7.7741,1.8766,15.51],[-7.7741,2.7433,15.51],[-25.6207,2.7433,15.51]);
       b.box('red',-16.697,2.78,15.49,17.98,.06,.045);b.box('red',-16.697,1.842,15.49,17.98,.06,.045);
@@ -73,7 +88,7 @@ function build(option,materials){
       // Retain a clear route on both sides and the existing open canopy height.
       b.box('wall',-13.9,1.725,13.15,.4,3.45,.4);
       // Timber canopy is shown as an open edge trace to keep the exhibits visible.
-      for(let x=-25.5;x<-2;x+=1.45)b.box('oak',x,3.45,15.5,.055,.09,.7);
+      for(let x=-25.5;x<timelineEnd;x+=1.45)b.box('oak',x,3.45,15.5,.055,.09,.7);
     }
     if(option==='combined')for(let z=9.5;z<11.6;z+=.35)b.box('red',-8.1,.01,z,.07,.012,.1);
   }
@@ -85,7 +100,7 @@ export function mountSpatial(host){
   const state={option:'table',lighting:'day',view:'axon',azimuth:null,active:false,motion:true,reveal:true};
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;
+  renderer.setPixelRatio(Math.max(1,Math.min(devicePixelRatio||1,1.5)));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;renderer.shadowMap.autoUpdate=false;
   renderer.domElement.className='spatial-canvas';renderer.domElement.style.cssText='display:block;width:100%;height:100%;touch-action:none;cursor:grab';renderer.domElement.setAttribute('aria-label','Interactive simplified 3D model of the RBB gallery');host.append(renderer.domElement);
   const scene=new THREE.Scene();scene.background=null;
@@ -95,11 +110,12 @@ export function mountSpatial(host){
   const fill=new THREE.DirectionalLight('#d9ecf2',.9);scene.add(fill);
   const warm=new THREE.PointLight('#ffc980',0,40,1.5);scene.add(warm);
   const redLight=new THREE.PointLight('#ed5240',0,30,1.5);scene.add(redLight);
+  let figures=null,display=null;
   let texture=null,destroyed=false,inViewport=true,group=null,raf=0,lastFrame=0,clock=0,frames=0,lastStatsTime=0,fps=0,fpsCount=0,nightMix=0,reveal=1,sampleTime=null;
   let geometryBounds=new THREE.Box3(),center=new THREE.Vector3(),radius=12,baseSize=10,aspect=1;
   let theta=-2.37,phi=.95,desiredTheta=-2.37,desiredPhi=.95,zoom=1,desiredZoom=1,manualTheta=0,manualPhi=0,manualUntil=0;
   const pointers=new Map();
-  let pinchDistance=0;
+  let pinchDistance=0,sweepRate=0;
   const mats={
     ground:new THREE.MeshStandardMaterial({color:'#d4d0c5',roughness:.77}),
     wall:new THREE.MeshStandardMaterial({color:'#f4f0e5',roughness:.8,side:THREE.DoubleSide}),
@@ -115,18 +131,63 @@ export function mountSpatial(host){
     screen:new THREE.MeshBasicMaterial({color:'#fff9e8',side:THREE.DoubleSide,toneMapped:false}),
     ceiling:new THREE.MeshStandardMaterial({color:'#e7e5df',roughness:.85,transparent:true,opacity:.25,depthWrite:false})
   };
-  function disposeGroup(){if(group){scene.remove(group);group.traverse(o=>o.geometry?.dispose());group=null}}
-  function rebuild(){disposeGroup();group=build(state.option,mats);scene.add(group);geometryBounds.setFromObject(group);geometryBounds.getCenter(center);center.y=.9;const size=geometryBounds.getSize(new THREE.Vector3());radius=Math.max(size.x,size.z)*1.9;sun.position.copy(center).add(new THREE.Vector3(-7,16,-8));sun.target.position.copy(center);fill.position.copy(center).add(new THREE.Vector3(8,10,4));warm.position.copy(center).add(new THREE.Vector3(1,3.2,-1));redLight.position.copy(center).add(new THREE.Vector3(2,2.1,1));manualTheta=0;manualPhi=0;desiredTheta=Number.isFinite(state.azimuth)?state.azimuth:((state.option==='wall'||state.option==='combined')?-1.9:-2.37);reveal=state.active&&state.motion&&state.reveal&&!reduced.matches?.06:1;renderer.shadowMap.needsUpdate=true;fit();}
-  function fit(){const oldP=camera.position.clone(),oldT=camera.quaternion.clone();const aim=center.clone();const fitPhi=state.view==='plan'?.001:.95;camera.position.set(aim.x+Math.sin(desiredTheta)*Math.sin(fitPhi)*radius,aim.y+Math.cos(fitPhi)*radius,aim.z+Math.cos(desiredTheta)*Math.sin(fitPhi)*radius);camera.lookAt(aim);camera.updateMatrixWorld();const inv=camera.matrixWorldInverse;let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;for(const x of[geometryBounds.min.x,geometryBounds.max.x])for(const y of[0,geometryBounds.max.y])for(const z of[geometryBounds.min.z,geometryBounds.max.z]){const p=new THREE.Vector3(x,y,z).applyMatrix4(inv);minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y)}baseSize=Math.max((maxY-minY)*.62,(maxX-minX)/aspect*.62,3);camera.position.copy(oldP);camera.quaternion.copy(oldT);camera.left=-baseSize*aspect;camera.right=baseSize*aspect;camera.top=baseSize;camera.bottom=-baseSize;camera.updateProjectionMatrix();}
+  function disposeGroup(){
+    figures?.group.removeFromParent();figures?.dispose();figures=null;
+    display?.dispose();display=null;
+    if(group){scene.remove(group);group.traverse(o=>o.geometry?.dispose());group=null;}
+  }
+  function rebuild(){disposeGroup();group=build(state.option,mats);scene.add(group);geometryBounds.setFromObject(group);figures=createSpatialFigures(state.option);group.add(figures.group);if(state.option==='wall'){display=createSpatialDisplay({onLoad:()=>drawOnce()});display.group.position.set(-10.2,1.05,15.32);group.add(display.group);}geometryBounds.getCenter(center);center.y=.9;const size=geometryBounds.getSize(new THREE.Vector3());radius=Math.max(size.x,size.z)*1.9;sun.position.copy(center).add(new THREE.Vector3(-7,16,-8));sun.target.position.copy(center);fill.position.copy(center).add(new THREE.Vector3(8,10,4));warm.position.copy(center).add(new THREE.Vector3(1,3.2,-1));redLight.position.copy(center).add(new THREE.Vector3(2,2.1,1));manualTheta=0;manualPhi=0;clock=0;sweepRate=0;manualUntil=0;desiredTheta=Number.isFinite(state.azimuth)?state.azimuth:((state.option==='wall'||state.option==='combined')?-1.9:-2.37);reveal=state.active&&state.motion&&state.reveal&&!reduced.matches?.06:1;renderer.shadowMap.needsUpdate=true;fit();}
+  function fit(fitPhi=state.view==='plan'?.001:clamp(.95+manualPhi,.35,1.35)){
+    // Fit the complete orbit, not just the first camera angle. The radial bounds
+    // keep long walls inside the same stable frame throughout the half turn.
+    const halfX=Math.max(Math.abs(geometryBounds.min.x-center.x),Math.abs(geometryBounds.max.x-center.x));
+    const halfZ=Math.max(Math.abs(geometryBounds.min.z-center.z),Math.abs(geometryBounds.max.z-center.z));
+    const radialExtent=Math.hypot(halfX,halfZ);
+    const verticalExtent=Math.max(Math.abs(geometryBounds.min.y-center.y),Math.abs(geometryBounds.max.y-center.y));
+    baseSize=Math.max((radialExtent*Math.cos(fitPhi)+verticalExtent*Math.sin(fitPhi))*1.12,radialExtent/aspect*1.12,3);
+    camera.left=-baseSize*aspect;camera.right=baseSize*aspect;camera.top=baseSize;camera.bottom=-baseSize;camera.updateProjectionMatrix();
+  }
   function resize(draw=true){if(destroyed)return;const r=host.getBoundingClientRect();if(r.width<2||r.height<2)return;aspect=r.width/r.height;renderer.setSize(Math.round(r.width),Math.round(r.height),false);if(group)fit();if(draw)drawOnce();}
   function light(dt,instant=false){const target=state.lighting==='night'?1:0;nightMix=instant?target:THREE.MathUtils.damp(nightMix,target,4,dt);hemi.intensity=THREE.MathUtils.lerp(2,.36,nightMix);sun.intensity=THREE.MathUtils.lerp(2.8,.12,nightMix);fill.intensity=THREE.MathUtils.lerp(.9,.3,nightMix);warm.intensity=nightMix*26;redLight.intensity=nightMix*12;mats.red.emissiveIntensity=.07+nightMix*.65;renderer.toneMappingExposure=THREE.MathUtils.lerp(1.22,1.04,nightMix);}
-  function position(dt,instant=false,atTime=null){const still=!state.motion||reduced.matches;desiredPhi=state.view==='plan'?.001:clamp(.95+manualPhi,.35,1.35);const orbit=state.view==='axon'&&(atTime!==null||(!still&&performance.now()>manualUntil))?Math.sin((atTime??clock)*.13)*.055:0;const targetTheta=desiredTheta+manualTheta+orbit;phi=instant?desiredPhi:THREE.MathUtils.damp(phi,desiredPhi,4,dt);theta=instant?targetTheta:THREE.MathUtils.damp(theta,targetTheta,4,dt);zoom=instant?desiredZoom:THREE.MathUtils.damp(zoom,desiredZoom,5,dt);camera.zoom=zoom;camera.updateProjectionMatrix();camera.position.set(center.x+Math.sin(theta)*Math.sin(phi)*radius,center.y+Math.cos(phi)*radius,center.z+Math.cos(theta)*Math.sin(phi)*radius);camera.lookAt(center);if(group){const previousReveal=reveal;reveal=instant?1:THREE.MathUtils.damp(reveal,1,4,dt);if(reveal>.999)reveal=1;group.scale.y=reveal;if(Math.abs(previousReveal-reveal)>.00001)renderer.shadowMap.needsUpdate=true;}}
+  function position(dt,instant=false,atTime=null){
+    desiredPhi=state.view==='plan'?.001:clamp(.95+manualPhi,.35,1.35);
+    // Keep the current angle when motion is paused, rather than snapping back.
+    const orbit=state.view==='axon'?sweepAngle(atTime??clock,state.option,desiredTheta):0;
+    figures?.update(atTime??clock);display?.update(atTime??clock);
+    const targetTheta=desiredTheta+manualTheta+orbit;
+    phi=instant?desiredPhi:THREE.MathUtils.damp(phi,desiredPhi,4,dt);
+    theta=instant?targetTheta:THREE.MathUtils.damp(theta,targetTheta,4,dt);
+    zoom=instant?desiredZoom:THREE.MathUtils.damp(zoom,desiredZoom,5,dt);
+    camera.zoom=zoom;fit(phi);
+    camera.position.set(center.x+Math.sin(theta)*Math.sin(phi)*radius,center.y+Math.cos(phi)*radius,center.z+Math.cos(theta)*Math.sin(phi)*radius);camera.lookAt(center);
+    if(group){const previousReveal=reveal;reveal=instant?1:THREE.MathUtils.damp(reveal,1,4,dt);if(reveal>.999)reveal=1;group.scale.y=reveal;if(Math.abs(previousReveal-reveal)>.00001)renderer.shadowMap.needsUpdate=true;}
+  }
   function render(dt=.033,instant=false){if(!state.active||!inViewport||document.hidden||destroyed)return;light(dt,instant);position(dt,instant||sampleTime!==null,sampleTime);renderer.render(scene,camera);frames++;fpsCount++;const now=performance.now();if(now-lastStatsTime>=1000){fps=fpsCount*1000/(now-lastStatsTime);lastStatsTime=now;fpsCount=0}}
   function drawOnce(){if(state.active&&inViewport&&!document.hidden){render(.033,!state.motion||reduced.matches);if(state.motion&&!reduced.matches)start();}}
-  function loop(time){raf=0;if(!state.active||!inViewport||!state.motion||reduced.matches||document.hidden||destroyed)return;if(time-lastFrame>=1000/30-.5){const dt=lastFrame?Math.min((time-lastFrame)/1000,.08):.033;lastFrame=time;clock+=dt;render(dt)}raf=requestAnimationFrame(loop)}
+  function loop(time){
+    raf=0;
+    if(!state.active||!inViewport||!state.motion||reduced.matches||document.hidden||destroyed)return;
+    if(time-lastFrame>=1000/30-.5){
+      const dt=lastFrame?Math.min((time-lastFrame)/1000,.08):.033;
+      lastFrame=time;
+      const canSweep=state.view==='axon'&&!pointers.size&&performance.now()>manualUntil;
+      if(canSweep&&manualTheta){
+        // Manual orbit is unrestricted. After idle, gently return to the front
+        // arc via the nearest equivalent angle rather than winding back around.
+        const wrapped=Math.atan2(Math.sin(manualTheta),Math.cos(manualTheta));
+        theta-=manualTheta-wrapped;
+        manualTheta=THREE.MathUtils.damp(wrapped,0,1.3,dt);
+        if(Math.abs(manualTheta)<.00001)manualTheta=0;
+      }
+      sweepRate=canSweep?THREE.MathUtils.damp(sweepRate,1,2,dt):0;
+      clock+=dt*sweepRate;
+      render(dt);
+    }
+    raf=requestAnimationFrame(loop);
+  }
   function start(){if(!raf&&sampleTime===null&&state.active&&inViewport&&state.motion&&!reduced.matches&&!document.hidden&&!destroyed){lastFrame=0;lastStatsTime=performance.now();fpsCount=0;raf=requestAnimationFrame(loop)}}
-  function stop(){if(raf)cancelAnimationFrame(raf);raf=0;lastFrame=0}
-  function update(next={}){if(destroyed)return;if(next.active===false||('option' in next&&next.option!==state.option)||('view' in next&&next.view!==state.view))clearPointers();sampleTime=null;const old={...state};Object.assign(state,next);if(!['table','glass','shelf','wall','combined'].includes(state.option))state.option='table';state.lighting=state.lighting==='night'?'night':'day';state.view=state.view==='plan'?'plan':'axon';state.azimuth=Number.isFinite(state.azimuth)?state.azimuth:null;state.active=!!state.active;state.motion=state.motion!==false;state.reveal=state.reveal!==false;renderer.domElement.dataset.option=state.option;renderer.domElement.dataset.view=state.view;renderer.domElement.dataset.lighting=state.lighting;if(old.option!==state.option)rebuild();if(old.view!==state.view||old.azimuth!==state.azimuth){manualTheta=0;manualPhi=0;desiredZoom=1;desiredTheta=Number.isFinite(state.azimuth)?state.azimuth:((state.option==='wall'||state.option==='combined')?-1.9:-2.37);fit()}if(!state.active||!state.motion||reduced.matches)stop();if(state.active){resize();if(!old.active){reveal=state.motion&&state.reveal&&!reduced.matches?.06:1;desiredZoom=1;position(.033,!state.motion||reduced.matches)}drawOnce();}}
+  function stop(){if(raf)cancelAnimationFrame(raf);raf=0;lastFrame=0;sweepRate=0}
+  function update(next={}){if(destroyed)return;if(next.active===false||('option' in next&&next.option!==state.option)||('view' in next&&next.view!==state.view))clearPointers();sampleTime=null;const old={...state};Object.assign(state,next);if(!['table','glass','shelf','wall','combined'].includes(state.option))state.option='table';state.lighting=state.lighting==='night'?'night':'day';state.view=state.view==='plan'?'plan':'axon';state.azimuth=Number.isFinite(state.azimuth)?state.azimuth:null;state.active=!!state.active;state.motion=state.motion!==false;state.reveal=state.reveal!==false;renderer.domElement.dataset.option=state.option;renderer.domElement.dataset.view=state.view;renderer.domElement.dataset.lighting=state.lighting;if(old.option!==state.option)rebuild();if(old.view!==state.view||old.azimuth!==state.azimuth){manualTheta=0;manualPhi=0;clock=0;sweepRate=0;manualUntil=0;desiredZoom=1;desiredTheta=Number.isFinite(state.azimuth)?state.azimuth:((state.option==='wall'||state.option==='combined')?-1.9:-2.37);fit()}if(!state.active||!state.motion||reduced.matches)stop();if(state.active){resize();if(!old.active){reveal=state.motion&&state.reveal&&!reduced.matches?.06:1;desiredZoom=1;position(.033,!state.motion||reduced.matches)}drawOnce();}}
   const visibility=()=>{if(document.hidden){clearPointers();stop()}else drawOnce()};document.addEventListener('visibilitychange',visibility);
   const reducedChange=()=>{stop();drawOnce()};reduced.addEventListener('change',reducedChange);
   const resizeObserver=new ResizeObserver(()=>resize());resizeObserver.observe(host);
@@ -139,10 +200,15 @@ export function mountSpatial(host){
     for(const id of ids)if(renderer.domElement.hasPointerCapture(id))renderer.domElement.releasePointerCapture(id);
     renderer.domElement.style.cursor='grab';
   }
+  function holdOrbit(){
+    // Start the gesture from the visible camera, including its damped position.
+    manualTheta=theta-desiredTheta-(state.view==='axon'?sweepAngle(clock,state.option,desiredTheta):0);
+    sweepRate=0;manualUntil=performance.now()+MANUAL_HOLD_MS;
+  }
   const down=e=>{
     if(!state.active||pointers.size>=2||(e.pointerType!=='touch'&&e.button!==0))return;
     pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    pinchDistance=pointerDistance();manualUntil=performance.now()+4500;
+    pinchDistance=pointerDistance();holdOrbit();
     renderer.domElement.setPointerCapture(e.pointerId);renderer.domElement.style.cursor='grabbing';
   };
   const move=e=>{
@@ -155,17 +221,17 @@ export function mountSpatial(host){
       pinchDistance=distance;
     }else if(state.view!=='plan'){
       manualTheta-=(e.clientX-previous.x)*.005;
-      manualPhi=clamp(manualPhi+(e.clientY-previous.y)*.004,-.6,.35);
+      manualPhi=clamp(manualPhi+(e.clientY-previous.y)*.004,-.6,.35);fit();
     }
-    manualUntil=performance.now()+4500;render(.05,!state.motion||reduced.matches);
+    manualUntil=performance.now()+MANUAL_HOLD_MS;render(.05,!state.motion||reduced.matches);
   };
   const up=e=>{
     if(!pointers.delete(e.pointerId))return;
     pinchDistance=pointerDistance();
     if(renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.releasePointerCapture(e.pointerId);
-    renderer.domElement.style.cursor=pointers.size?'grabbing':'grab';manualUntil=performance.now()+4500;
+    renderer.domElement.style.cursor=pointers.size?'grabbing':'grab';manualUntil=performance.now()+MANUAL_HOLD_MS;
   };
-  const wheel=e=>{if(!state.active)return;e.preventDefault();desiredZoom=clamp(desiredZoom*Math.exp(-e.deltaY*.00065),.75,1.7);render(.05,!state.motion||reduced.matches)};
+  const wheel=e=>{if(!state.active)return;e.preventDefault();holdOrbit();desiredZoom=clamp(desiredZoom*Math.exp(-e.deltaY*.00065),.75,1.7);render(.05,!state.motion||reduced.matches)};
   renderer.domElement.addEventListener('pointerdown',down);renderer.domElement.addEventListener('pointermove',move);renderer.domElement.addEventListener('pointerup',up);renderer.domElement.addEventListener('pointercancel',up);renderer.domElement.addEventListener('lostpointercapture',up);renderer.domElement.addEventListener('wheel',wheel,{passive:false});
   function rehost(nextHost){
     if(destroyed)return;
@@ -181,5 +247,5 @@ export function mountSpatial(host){
   function seek(seconds){if(destroyed)return;sampleTime=Number.isFinite(Number(seconds))?Math.max(0,Number(seconds)):0;clock=sampleTime;manualTheta=0;manualPhi=0;manualUntil=0;stop();resize(false);light(0,true);position(0,true,sampleTime);renderer.render(scene,camera);frames++;}
   rebuild();resize();
   texture=new THREE.TextureLoader().load(new URL('../assets/images/timeline-la-full.webp',import.meta.url).href,()=>drawOnce());texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=2;mats.screen.map=texture;mats.screen.needsUpdate=true;
-  return {update,rehost,prepare,seek,snapshot,dispose(){if(destroyed)return;clearPointers();destroyed=true;stop();resizeObserver.disconnect();intersectionObserver.disconnect();document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',reducedChange);disposeGroup();Object.values(mats).forEach(m=>m.dispose());texture?.dispose();renderer.dispose();renderer.domElement.remove()},get stats(){return{...state,sampleTime,revealProgress:reveal,inViewport,activeLoop:!!raf,frames,fps:Math.round(fps*10)/10,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,pixelRatio:renderer.getPixelRatio(),canvasCount:host.querySelectorAll('canvas').length,camera:camera.position.toArray(),zoom:camera.zoom,activePointers:pointers.size,reducedMotion:reduced.matches}},get canvas(){return renderer.domElement}};
+  return {update,rehost,prepare,seek,snapshot,dispose(){if(destroyed)return;clearPointers();destroyed=true;stop();resizeObserver.disconnect();intersectionObserver.disconnect();document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',reducedChange);disposeGroup();Object.values(mats).forEach(m=>m.dispose());texture?.dispose();renderer.dispose();renderer.domElement.remove()},get stats(){return{...state,sampleTime,revealProgress:reveal,inViewport,activeLoop:!!raf,frames,fps:Math.round(fps*10)/10,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,pixelRatio:renderer.getPixelRatio(),canvasCount:host.querySelectorAll('canvas').length,camera:camera.position.toArray(),zoom:camera.zoom,activePointers:pointers.size,reducedMotion:reduced.matches,cameraAzimuth:theta,figureCount:state.option==='shelf'||state.option==='wall'?2:0,animatedDisplay:!!display,orbitDegrees:sweepAngle(clock,state.option,desiredTheta)*180/Math.PI,orbitElapsed:clock,orbitLegSeconds:SWEEP_LEG_SECONDS,orbitHeld:!!pointers.size||performance.now()<manualUntil}},get canvas(){return renderer.domElement}};
 }

@@ -1,4 +1,4 @@
-import { mountLocationPlan } from './location-plan.js?v=6602206c8ffaac6ab19b';
+import { mountLocationPlan } from './location-plan.js?v=4ae5914e049e138b769a';
 
 // The RBB concepts are a conversation about possibilities, not a venue decision.
 // Geometry is built by the existing small procedural study; no Rhino or video
@@ -134,7 +134,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
  }
  function loadModel(host) {
   if (!modelPromise) {
-   modelPromise = import('./spatial.js?v=6602206c8ffaac6ab19b').then(({ mountSpatial }) => {
+   modelPromise = import('./spatial.js?v=4ae5914e049e138b769a').then(({ mountSpatial }) => {
     if (disposed) return null;
     model = mountSpatial(host);
     model.update({ active: false, motion: false, reveal: false });
@@ -154,7 +154,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
   if (!isSpace(scene)) return;
   ensureKeymaps();
   sync(scene);
-  // Phones use the same lightweight model, rendered on demand without ambient motion.
+  // Phones share the same live model; its loop runs only while the canvas is visible.
   await Promise.allSettled([...scene.querySelectorAll('[data-space-reference-image]')].map(image => { image.loading = 'eager'; return image.decode(); }));
   if (disposed || generation !== modelGeneration) return;
   const host = scene.querySelector('[data-space-model]');
@@ -185,7 +185,7 @@ export function createSpaceOpportunities({ onNavigate, onOpen, onClose } = {}) {
  function activate(scene, { motion: enabled = true } = {}) {
   if (disposed) return;
   ++modelGeneration;
-  motion = enabled !== false && !phone.matches;
+  motion = enabled !== false;
   activeScene = scene;
   plan?.setActive(scene === overview, { motion });
   if (scene === overview) ensurePlan()?.setActive(true, { motion });

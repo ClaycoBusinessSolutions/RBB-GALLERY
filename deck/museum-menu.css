@@ -96,3 +96,15 @@
   #overview [data-museum-underline]::before{transition:none}
   .museum-menu__inner{will-change:auto}
 }
+
+/* A smaller left signature balances a live preview in the lower-right corner. */
+.museum-menu__logo-row{flex-direction:row;align-items:flex-end;justify-content:space-between;gap:6%}
+#overview.museum-menu .museum-menu__wordmark{width:50%;height:auto;align-self:flex-end}
+.museum-menu__preview{flex:none;width:40%;margin:0;opacity:0;transition:opacity .45s ease;pointer-events:none}
+.museum-menu__preview[hidden]{display:none}
+.museum-menu__preview[data-ready="true"]{opacity:1}
+.museum-menu__preview-window{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:var(--paper);border:1px solid #0002}
+.museum-menu__preview-window iframe{position:absolute;top:0;left:0;width:1920px;height:1080px;border:0;transform-origin:0 0;pointer-events:none}
+.museum-menu__preview-caption{margin-top:.7em;font-size:.72em;font-weight:400;line-height:1.3;letter-spacing:0;color:#64645f}
+@media(max-width:991px){.museum-menu__preview{display:none!important}}
+@media(prefers-reduced-motion:reduce){.museum-menu__preview{transition:none}}

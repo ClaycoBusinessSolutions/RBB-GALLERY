@@ -21,11 +21,18 @@
   .scene.project-cover .invitation-cover__years{font-size:13px;letter-spacing:.02em;color:#ddd;margin:0}
   .scene.invitation-cover.project-cover h1{font-size:clamp(44px,12vw,72px)!important;max-width:12ch!important;line-height:1.02!important;text-align:center;text-shadow:0 2px 28px #000}
   .scene.project-cover .invitation-cover__subtitle{font-size:17px;line-height:1.45;max-width:27ch;color:#f4f2eb;text-align:center;margin:0}
-  .scene.project-cover .invitation-cover__begin,.scene.clark-cover .begin{align-self:center;margin:10px 0 0;padding:12px 0;font-size:15px;min-height:48px;pointer-events:auto}
-  .scene.project-cover .invitation-cover__begin span,.scene.clark-cover .begin span{padding-left:12px}
+  .scene.project-cover .invitation-cover__begin{align-self:center;margin:10px 0 0;padding:12px 0;font-size:15px;min-height:48px;pointer-events:auto}
+  .scene.project-cover .invitation-cover__begin span{padding-left:12px}
   .scene.clark-cover .clark-brandmark{width:100%!important;max-width:390px!important;height:auto!important;padding:0;margin:0 0 8px;background:transparent}
   .scene.clark-cover .cover-caption{align-self:center;font-size:22px;line-height:1.4;text-align:center;margin:0;max-width:25ch}
-  .scene.clark-cover .clark-site{align-self:center;justify-content:center;font-size:13px;color:#ccc;pointer-events:auto;margin:0}
+  .scene.clark-cover .begin,.scene.clark-cover .clark-site{position:absolute;top:12px;bottom:auto;display:flex;align-items:center;gap:8px;min-height:44px;margin:0;padding:10px 0;font-size:13px;line-height:1.3;white-space:nowrap;color:#fff;pointer-events:auto;z-index:4}
+  .scene.clark-cover .begin{left:20px;right:auto;border-bottom:0!important}
+  .scene.clark-cover .begin span{display:flex;padding-left:0}
+  .scene.clark-cover .clark-site{right:20px;left:auto;justify-content:flex-end}
+  .scene.clark-cover .begin .line-arrow,.scene.clark-cover .clark-site .line-arrow{width:14px;height:14px}
+}
+@media (max-width:380px){
+  .scene.clark-cover .begin,.scene.clark-cover .clark-site{font-size:12px;gap:6px}
 }
 @keyframes mobile-cover-flow {
   from{transform:translate3d(0,0,0)}

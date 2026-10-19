@@ -1,16 +1,16 @@
-import { mountArtField } from './art-field.js?v=d7625a3b171403e48774';
-import { mountProjectField } from './project-field.js?v=d7625a3b171403e48774';
-import { mountArcTransition } from './arc-transition.js?v=d7625a3b171403e48774';
-import { mountMuseumMenu } from './museum-menu.js?v=d7625a3b171403e48774';
-import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=d7625a3b171403e48774';
-import { createSeminalProjects } from './seminal-projects.js?v=d7625a3b171403e48774';
-import { isProjectSequence } from './project-sequence.js?v=d7625a3b171403e48774';
-import { createHopeGallery } from './hope-gallery.js?v=d7625a3b171403e48774';
-import { createSpaceOpportunities } from './space-opportunities.js?v=d7625a3b171403e48774';
-import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=d7625a3b171403e48774';
-import { mountMobileNavContrast } from './mobile-nav-contrast.js?v=d7625a3b171403e48774';
-import { createClarkLogoMotion } from './clark-logo-motion.js?v=d7625a3b171403e48774';
-import { createSectionNarrativeMotion } from './section-narrative-motion.js?v=d7625a3b171403e48774';
+import { mountArtField } from './art-field.js?v=a172b369e672e17d83cb';
+import { mountProjectField } from './project-field.js?v=a172b369e672e17d83cb';
+import { mountArcTransition } from './arc-transition.js?v=a172b369e672e17d83cb';
+import { mountMuseumMenu } from './museum-menu.js?v=a172b369e672e17d83cb';
+import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=a172b369e672e17d83cb';
+import { createSeminalProjects } from './seminal-projects.js?v=a172b369e672e17d83cb';
+import { isProjectSequence } from './project-sequence.js?v=a172b369e672e17d83cb';
+import { createHopeGallery } from './hope-gallery.js?v=a172b369e672e17d83cb';
+import { createSpaceOpportunities } from './space-opportunities.js?v=a172b369e672e17d83cb';
+import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=a172b369e672e17d83cb';
+import { mountMobileNavContrast } from './mobile-nav-contrast.js?v=a172b369e672e17d83cb';
+import { createClarkLogoMotion } from './clark-logo-motion.js?v=a172b369e672e17d83cb';
+import { createSectionNarrativeMotion } from './section-narrative-motion.js?v=a172b369e672e17d83cb';
 
 const $ = selector => document.querySelector(selector);
 const scenes = [...document.querySelectorAll('.scene')];
@@ -131,7 +131,7 @@ async function prepareScene(scene) {
  await Promise.allSettled([prepareCover(scene), clarkLogoMotions.get(scene)?.ready, hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
  if (scene.dataset.compositionId === 'office-art') {
   const generation = fieldGeneration;
-  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=d7625a3b171403e48774').then(async ({ mountWavyAccordion }) => {
+  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=a172b369e672e17d83cb').then(async ({ mountWavyAccordion }) => {
    if (generation !== fieldGeneration) return null;
    const root = scene.querySelector('[data-wavy-accordion-init]');
    officeAccordion = mountWavyAccordion(root, { onSelect: index => openOfficePhoto(root, index) });

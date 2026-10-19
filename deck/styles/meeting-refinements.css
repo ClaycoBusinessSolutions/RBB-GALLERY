@@ -1,5 +1,5 @@
 /* 15 October review: section framing and consistent presentation proportions. */
-.section-divider{background:#252525;color:var(--paper)}
+.section-divider{background:#79adde;color:var(--ink)}
 .section-divider .scene-inner{display:flex;align-items:center;justify-content:center;padding:100px 180px}
 .section-divider__content{width:100%;max-width:1450px;text-align:center}
 .section-divider h2{font-size:32px!important;line-height:1.25!important;letter-spacing:.02em!important;margin:0 0 48px;font-weight:400}

@@ -18,7 +18,7 @@
 /* A modest signature introduces the collection before its full cover. */
 .section-divider .clark-brandmark--intro{
   display:block;width:440px;height:auto;aspect-ratio:404/118;
-  padding:0;margin:0 auto 40px;background:transparent;line-height:0!important;
+  padding:0;margin:0 auto 40px;background:transparent;line-height:0!important;filter:brightness(0);
 }
 @media(max-width:900px){
   .section-divider .clark-brandmark--intro{width:min(240px,78%)!important;margin:0 auto 28px}

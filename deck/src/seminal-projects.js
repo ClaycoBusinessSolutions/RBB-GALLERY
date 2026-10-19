@@ -1,5 +1,5 @@
 /** Source-backed details layered over the continuous project stream. */
-import { mountProjectStream } from './project-queue.js?v=a172b369e672e17d83cb';
+import { mountProjectStream } from './project-queue.js?v=30428f10c3b3308a3695';
 const SELECTORS = { button: 'button[data-project-id]' };
 
 export function createSeminalProjects({ onOpen, onClose } = {}) {

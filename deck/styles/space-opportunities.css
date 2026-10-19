@@ -1,4 +1,4 @@
-@import url('./location-plan.css?v=4ae5914e049e138b769a');
+@import url('./location-plan.css?v=d7625a3b171403e48774');
 
 /* Potential RBB settings: quiet source-led studies, one shared font system. */
 .space-overview,.space-opportunity{background:var(--paper);color:#000}
@@ -7,7 +7,7 @@
 .space-overview h2{position:absolute;left:100px;top:165px;font-size:86px;line-height:1.05;white-space:nowrap}
 .space-overview__copy{position:absolute;left:105px;top:285px;width:1715px;font-size:32px;line-height:1.25;letter-spacing:-.025em;margin:0;text-wrap:pretty}
 .space-overview__copy p{margin:0}
-.space-overview__plan{position:absolute;left:105px;top:365px;width:1715px;height:535px}
+.space-overview__plan{position:absolute;left:105px;top:290px;width:1715px;height:630px}
 .space-overview__plan .lp-legend{margin-top:20px}
 .space-overview__plan .lp-legend-name{font-size:26px}
 .space-overview__plan .lp-legend-detail{font-size:18px}
@@ -19,7 +19,7 @@
 .space-opportunity h2 span{display:inline;white-space:nowrap}
 .space-opportunity__copy{position:absolute;left:105px;top:225px;width:1440px;font-size:25px;line-height:1.42;margin:0}
 .space-opportunity__copy>span{display:block;white-space:nowrap}
-.space-opportunity__reference{position:absolute;left:70px;top:340px;width:970px;height:600px;padding:0!important;text-align:left;display:block}
+.space-opportunity__reference{position:absolute;left:70px;top:245px;width:970px;height:660px;padding:0!important;text-align:left;display:block}
 .space-opportunity__reference img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;background:transparent}
 .space-opportunity__reference-label{display:flex;align-items:center;justify-content:space-between;font-size:23px;line-height:1.2;margin-top:17px}
 .space-opportunity__reference:hover .space-opportunity__reference-label{text-decoration:underline;text-underline-offset:5px}
@@ -27,7 +27,7 @@
 .space-opportunity__options{position:static;display:flex;align-items:center}
 .space-opportunity__options button{white-space:nowrap}
 .space-opportunity__options button[aria-pressed="true"]{border-bottom-color:transparent}
-.space-opportunity__model{position:absolute;left:1080px;top:340px;width:770px;height:600px;touch-action:none}
+.space-opportunity__model{position:absolute;left:1080px;top:245px;width:770px;height:660px;touch-action:none}
 .space-opportunity__model>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
 .space-opportunity__model canvas{position:relative;z-index:1}
 .space-opportunity__model [data-space-snapshot]{z-index:2}
@@ -75,7 +75,7 @@
 /* Overview: the two choices form a left-hand index beside the shared plan. */
 @media(min-width:901px){
  .space-overview__copy p{white-space:nowrap}
- .space-overview__plan{display:grid;grid-template-columns:430px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;column-gap:70px}
+ .space-overview__plan{display:grid;grid-template-columns:430px minmax(0,1fr);grid-template-rows:minmax(0,1fr);column-gap:70px}
  .space-overview__plan>.lp-drawing{grid-column:2;grid-row:1;width:100%;height:100%}
  .space-overview__plan .lp-legend{grid-column:1;grid-row:1;grid-template-columns:1fr;align-self:center;margin-top:0}
  .space-overview__plan .lp-location{padding:28px 22px}

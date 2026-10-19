@@ -6,7 +6,7 @@
 const GROUPS = [
   { title: 'Invitation', ids: ['invitation-cover', 'living-portrait', 'why-we-build', 'partner-invitation'] },
   { title: 'Seminal projects', ids: ['projects-intro','projects-civic', 'projects-work', 'projects-care', 'projects-industry'] },
-  { title: 'Art and collaboration', ids: ['collection-intro', 'collection', 'office-art', 'collection-artists', 'hope-plaza'] },
+  { title: 'Art and collaboration', ids: ['collection-intro', 'office-art', 'collection-artists', 'hope-plaza'] },
   { title: 'Possibilities', ids: ['spaces-intro','opportunities-plan','opportunity-prefunction','opportunity-timeline','possibility'] },
 ];
 const LABELS = {
@@ -14,7 +14,7 @@ const LABELS = {
   'why-we-build': 'Why we build', 'partner-invitation': 'The invitation',
   'projects-civic': 'Life and community', 'projects-work': 'Work and connection',
   'projects-care': 'Care and discovery', 'projects-industry': 'Making what comes next',
-  'hope-plaza': 'A place for hope', collection: 'The Clark Collection',
+  'hope-plaza': 'A place for hope',
   'office-art': 'Art in our spaces', 'collection-artists': 'Artists and perspectives',
   possibility: 'Imagine together',
   'projects-intro':'The story behind the work', 'collection-intro':'Art as part of life', 'spaces-intro':'Space for possibility',
@@ -23,7 +23,7 @@ const LABELS = {
 };
 
 function loadStyles() {
-  const href = new URL('../museum-menu.css?v=4ae5914e049e138b769a', import.meta.url).href;
+  const href = new URL('../museum-menu.css?v=d7625a3b171403e48774', import.meta.url).href;
   if ([...document.styleSheets].some(sheet => sheet.href === href)) return Promise.resolve();
   let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(item => item.href === href);
   return new Promise(resolve => {

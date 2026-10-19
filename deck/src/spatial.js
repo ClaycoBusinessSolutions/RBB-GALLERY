@@ -1,6 +1,6 @@
-import * as THREE from '../vendor/three/build/three.module.js?v=4ae5914e049e138b769a';
-import { createSpatialFigures } from './spatial-figures.js?v=4ae5914e049e138b769a';
-import { createSpatialDisplay } from './spatial-display.js?v=4ae5914e049e138b769a';
+import * as THREE from '../vendor/three/build/three.module.js?v=d7625a3b171403e48774';
+import { createSpatialFigures } from './spatial-figures.js?v=d7625a3b171403e48774';
+import { createSpatialDisplay } from './spatial-display.js?v=d7625a3b171403e48774';
 
 // Lightweight source-grounded 3D study. Metres from the original Rhino export.
 // These cutaways simplify boundaries, furnishings, model identities and lighting.

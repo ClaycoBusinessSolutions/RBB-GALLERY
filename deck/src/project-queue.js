@@ -87,9 +87,10 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
   }
   scenes.find(isMarket)?.prepend(root);
   const positions = new Map();
-  const industry = groups.get('projects-industry');
-  const industryGrid = industry.querySelector('.project-stream__grid');
-  const industryPhotos = [...industryGrid.querySelectorAll('.project-stream__photo')];
+  const denseGroups = [...groups.values()].map(section => {
+    const grid = section.querySelector('.project-stream__grid');
+    return { section, grid, photos: [...grid.querySelectorAll('.project-stream__photo')] };
+  }).filter(group => group.photos.length > 8);
 
   function measure() {
     for (const card of cards) {
@@ -99,28 +100,33 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     }
   }
   function layoutFor(scene) {
-    const photoHeight = industryPhotos[0].offsetWidth * .75;
-    const rowGap = parseFloat(getComputedStyle(industryGrid).columnGap);
-    if (scene?.dataset.compositionId !== 'projects-industry') return { photoHeight, rowGap };
-    const rowCaptions = [];
-    [...industryGrid.children].forEach((card, index) => {
-      const row = Math.floor(index / 4);
-      rowCaptions[row] = Math.max(rowCaptions[row] || 0, card.querySelector('.project-stream__caption').offsetHeight);
+    return denseGroups.map(({ section, grid, photos }) => {
+      const photoHeight = photos[0].offsetWidth * .75;
+      const rowGap = parseFloat(getComputedStyle(grid).columnGap);
+      if (scene?.dataset.compositionId !== section.dataset.market) return { photos, grid, photoHeight, rowGap };
+      const rowCaptions = [];
+      [...grid.children].forEach((card, index) => {
+        const row = Math.floor(index / 4);
+        rowCaptions[row] = Math.max(rowCaptions[row] || 0, card.querySelector('.project-stream__caption').offsetHeight);
+      });
+      const rows = rowCaptions.length;
+      const captions = rowCaptions.reduce((sum, height) => sum + height, 0);
+      const available = root.clientHeight - 80 - grid.offsetTop - 80;
+      const naturalHeight = rows * photoHeight + captions + (rows - 1) * rowGap;
+      const fit = Math.min(1, Math.max(.1, available / naturalHeight));
+      const compactGap = rowGap * fit;
+      return {
+        photos, grid,
+        photoHeight: Math.min(photoHeight, Math.max(1, (available - captions - (rows - 1) * compactGap) / rows)),
+        rowGap: compactGap,
+      };
     });
-    const rows = rowCaptions.length;
-    const captions = rowCaptions.reduce((sum, height) => sum + height, 0);
-    const available = root.clientHeight - 80 - industryGrid.offsetTop - 80;
-    const naturalHeight = rows * photoHeight + captions + (rows - 1) * rowGap;
-    const fit = Math.min(1, Math.max(.1, available / naturalHeight));
-    const compactGap = rowGap * fit;
-    return {
-      photoHeight: Math.min(photoHeight, Math.max(1, (available - captions - (rows - 1) * compactGap) / rows)),
-      rowGap: compactGap,
-    };
   }
   function applyLayout(layout) {
-    gsap.set(industryPhotos, { height: layout.photoHeight });
-    gsap.set(industryGrid, { rowGap: layout.rowGap });
+    for (const group of layout) {
+      gsap.set(group.photos, { height: group.photoHeight });
+      gsap.set(group.grid, { rowGap: group.rowGap });
+    }
   }
   function hydrate(scene = activeScene) {
     if (destroyed) return;
@@ -172,8 +178,10 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
   function phoneLayout(scene) {
     root.classList.add('project-stream--mobile');
     gsap.set(track, { clearProps: 'transform' });
-    gsap.set(industryPhotos, { clearProps: 'height' });
-    gsap.set(industryGrid, { clearProps: 'rowGap' });
+    for (const group of denseGroups) {
+      gsap.set(group.photos, { clearProps: 'height' });
+      gsap.set(group.grid, { clearProps: 'rowGap' });
+    }
     hydrate(scene);
     for (const section of groups.values()) {
       const selected = section.dataset.market === scene.dataset.compositionId;
@@ -241,10 +249,12 @@ export function mountProjectStream(scenes, { getProject, ready, onInspect } = {}
     gsap.set(track, { y: start });
     gsap.set([from, to], { opacity: 1 });
     timeline.to(track, { y: end, duration, ease: 'power2.inOut' }, 0);
-    // Only ten frames change height. Keep columns and text fixed, and crop images
-    // with object-fit rather than distorting them with a non-uniform scale.
-    timeline.to(industryPhotos, { height: endLayout.photoHeight, duration, ease: 'power2.inOut' }, 0);
-    timeline.to(industryGrid, { rowGap: endLayout.rowGap, duration, ease: 'power2.inOut' }, 0);
+    // Dense markets fit all rows by changing photo heights and row spacing.
+    // Keep columns and text fixed, and crop images with object-fit.
+    for (const group of endLayout) {
+      timeline.to(group.photos, { height: group.photoHeight, duration, ease: 'power2.inOut' }, 0);
+      timeline.to(group.grid, { rowGap: group.rowGap, duration, ease: 'power2.inOut' }, 0);
+    }
     if (intro) {
       gsap.set(market, { zIndex: 3 });
       gsap.set(intro, { zIndex: 4 });

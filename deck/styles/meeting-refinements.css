@@ -1,5 +1,5 @@
 /* 15 October review: section framing and consistent presentation proportions. */
-.section-divider{background:var(--red);color:var(--paper)}
+.section-divider{background:#000;color:var(--paper)}
 .section-divider .scene-inner{display:flex;align-items:center;justify-content:center;padding:100px 180px}
 .section-divider__content{width:100%;max-width:1450px;text-align:center}
 .section-divider h2{font-size:32px!important;line-height:1.25!important;letter-spacing:.02em!important;margin:0 0 48px;font-weight:400}
@@ -37,22 +37,21 @@
 .hope-gallery__credits{margin-top:24px;font-size:15px}
 .hope-gallery__sources{font-size:15px}
 .hope-gallery__story>.hope-gallery__photo-note{font-size:14px;margin-top:10px}
-/* Closing invitation: one compact hierarchy, followed by three numbered prompts. */
-.collaboration-invitation h2{top:250px}
-.collaboration-invitation .collaboration-invitation__lead{top:390px}
-.collaboration-invitation .collaboration-invitation__questions{top:510px;gap:64px;padding:28px 0 0;margin:0;list-style:none}
-.collaboration-invitation__questions>li{min-width:0}
-.collaboration-invitation__number{display:block;font-size:23px;line-height:1.2;letter-spacing:.02em;font-variant-numeric:tabular-nums;margin:0 0 18px;opacity:.75}
+/* Closing invitation: Alice’s concise invitation, returning to the black cover. */
+.collaboration-invitation{background:#000;color:var(--paper)}
+.collaboration-invitation h2{top:300px}
+.collaboration-invitation .collaboration-invitation__lead{top:460px}
+.collaboration-invitation__closing{position:absolute;left:105px;right:105px;top:675px;margin:0;font-size:48px;line-height:1.25;letter-spacing:-.025em}
+.section-divider__link{display:flex;align-items:center;justify-content:center;gap:12px;width:fit-content;margin:26px auto 0;color:inherit;font-size:23px;line-height:1.4;text-decoration:underline;text-underline-offset:5px}
+.section-divider__link .line-arrow{width:23px;height:23px;flex:none}
 @media(max-width:900px){
-  .scene.collaboration-invitation .scene-inner{gap:20px}
+  .scene.collaboration-invitation .scene-inner{gap:28px;justify-content:center}
   .scene.collaboration-invitation .eyebrow{margin:0 0 8px}
   .collaboration-invitation .collaboration-invitation__lead{position:static;font-size:21px;line-height:1.4}
-  .collaboration-invitation .collaboration-invitation__questions{position:static;grid-template-columns:1fr;gap:24px;margin-top:12px;padding-top:24px}
-  .collaboration-invitation__questions>li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:14px;align-items:start}
-  .collaboration-invitation__questions .collaboration-invitation__number{font-size:14px;line-height:27px;margin:0}
-  .collaboration-invitation__questions .keep-words{white-space:nowrap!important}
+  .collaboration-invitation__closing{position:static;margin:28px 0 0;font-size:26px;line-height:1.3}
+  .section-divider__link{font-size:16px;min-height:44px;margin-top:18px}
 }
-/* Keep the quiet utility navigation from turning into dark boxes on red. */
+/* Navigation stays integrated with the dark section backgrounds. */
 body:has(.section-divider.active) #slide-navigation button,
 body:has(.collaboration-invitation.active) #slide-navigation button{background:transparent}
 @media(prefers-reduced-motion:reduce){.section-divider *{transition:none!important}}

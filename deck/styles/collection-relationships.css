@@ -1,0 +1,15 @@
+/* Integrate after original-statements/mobile CSS. Full photographs retained. */
+.collection-relationships .scene-inner{display:flex;flex-direction:column;justify-content:center;gap:64px;padding:78px 80px 110px}
+.collection-relationships__heading .eyebrow{position:static;margin:0 0 18px;font-size:18px}
+.collection-relationships__heading h2{position:static;margin:0;font-size:76px;line-height:1.05;letter-spacing:-.045em}
+.collection-relationships__photos{display:grid;grid-template-columns:.75fr .75fr 1.4993fr;gap:24px;align-items:center;width:100%}
+.collection-relationships__photos figure{width:100%;max-width:none;margin:0}
+.collection-relationships__photos .source-art-frame{height:auto;display:block}
+.collection-relationships__photos img{display:block;width:100%;height:auto;max-height:none;object-fit:contain}
+@media(max-width:900px){
+  .collection-relationships .scene-inner{display:flex;gap:28px;padding:32px 24px calc(104px + env(safe-area-inset-bottom));justify-content:flex-start}
+  .collection-relationships__heading .eyebrow{font-size:12px;margin-bottom:18px}
+  .collection-relationships__photos{grid-template-columns:1fr;gap:24px}
+  .collection-relationships__photos figure{max-width:520px;justify-self:center}
+  .collection-relationships__photos img{max-height:none;object-position:center}
+}

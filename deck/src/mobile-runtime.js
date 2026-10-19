@@ -1,5 +1,5 @@
 /** Pure scene-address rules shared by reload recovery and the public wrapper. */
-export const normalizeSceneId = id => id === 'projects-industry-continued' ? 'projects-industry' : id;
+export const normalizeSceneId = id => id === 'collection' ? 'collection-intro' : id === 'projects-industry-continued' ? 'projects-industry' : id;
 
 export function validSceneId(value, sceneIds) {
  const id = normalizeSceneId(value);

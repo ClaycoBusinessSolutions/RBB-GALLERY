@@ -1,5 +1,5 @@
 /** Source-backed details layered over the continuous project stream. */
-import { mountProjectStream } from './project-queue.js?v=4ae5914e049e138b769a';
+import { mountProjectStream } from './project-queue.js?v=d7625a3b171403e48774';
 const SELECTORS = { button: 'button[data-project-id]' };
 
 export function createSeminalProjects({ onOpen, onClose } = {}) {
@@ -11,7 +11,11 @@ export function createSeminalProjects({ onOpen, onClose } = {}) {
   let projectMap = new Map(), loadError = false, returnFocus = null;
   let dialogIds = [], dialogIndex = 0, viewGeneration = 0, currentProject = null;
 
-  const ready = fetch('assets/projects/projects.json', { signal })
+  // Keep project data paired with the versioned module when a new card is added.
+  const manifestUrl = new URL('assets/projects/projects.json', document.baseURI);
+  const buildVersion = new URL(import.meta.url).searchParams.get('v');
+  if (buildVersion) manifestUrl.searchParams.set('v', buildVersion);
+  const ready = fetch(manifestUrl, { signal, cache: 'no-cache' })
     .then(response => { if (!response.ok) throw new Error(`Project manifest: ${response.status}`); return response.json(); })
     .then(data => { projectMap = new Map((Array.isArray(data) ? data : data.projects || []).map(project => [project.id, project])); })
     .catch(error => { if (error.name !== 'AbortError') { loadError = true; console.warn('Seminal project details unavailable.', error); } });

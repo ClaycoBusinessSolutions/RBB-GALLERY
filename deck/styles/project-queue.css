@@ -18,6 +18,3 @@
 .project-stream__arrow { position:absolute; right:0; top:14px; color:#fff; font-size:19px; line-height:1; }
 .project-stream__card:hover .project-stream__arrow { color:#fff; }
 @media(prefers-reduced-motion:reduce) { .project-stream__track { will-change:auto; } }
-
-/* Keep the OPC tower roof visible in the compact landscape cards. */
-[data-project-id="obama-presidential-center"] img{object-position:center top}

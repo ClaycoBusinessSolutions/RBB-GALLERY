@@ -1,5 +1,5 @@
 /** Source-backed details layered over the continuous project stream. */
-import { mountProjectStream } from './project-queue.js?v=30428f10c3b3308a3695';
+import { mountProjectStream } from './project-queue.js?v=5e8b53d4d8440aa3cca6';
 const SELECTORS = { button: 'button[data-project-id]' };
 
 export function createSeminalProjects({ onOpen, onClose } = {}) {
@@ -71,7 +71,7 @@ export function createSeminalProjects({ onOpen, onClose } = {}) {
     const pictured = record.image ? record : currentProject;
     image.src = pictured?.image || '';
     image.alt = pictured?.title || 'Clayco project';
-    caption.textContent = [pictured?.title, pictured?.imageType].filter(Boolean).join(' / ');
+    caption.textContent = [pictured?.title, pictured?.imageType, pictured?.imageCredit].filter(Boolean).join(' / ');
     setSource(record.url || currentProject?.url);
   }
   function showDetails(record) {

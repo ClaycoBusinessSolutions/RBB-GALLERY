@@ -1,5 +1,5 @@
 /** The Clark Collection's existing moving collage, populated by Clayco projects. */
-import { mountArtField } from './art-field.js?v=5e8b53d4d8440aa3cca6';
+import { mountArtField } from './art-field.js?v=e70d4298d8fbed4e85ee';
 
 export async function mountProjectField(host, { onSelect } = {}) {
   if (!host?.append) throw new TypeError('mountProjectField requires a host element.');

@@ -1,4 +1,4 @@
-import * as THREE from '../vendor/three/build/three.module.js?v=5e8b53d4d8440aa3cca6';
+import * as THREE from '../vendor/three/build/three.module.js?v=e70d4298d8fbed4e85ee';
 
 // An illustrative inset display, using photographs already in this presentation.
 // Its clock belongs to the spatial viewer so hidden/paused studies do no work.

@@ -387,7 +387,7 @@ export function mountWavyAccordion(root, { onSelect = () => {} } = {}) {
 
   const ready = (async () => {
     try {
-      THREE = await import('../vendor/three/build/three.module.js?v=5e8b53d4d8440aa3cca6');
+      THREE = await import('../vendor/three/build/three.module.js?v=e70d4298d8fbed4e85ee');
       if (disposed) return { mode: 'disposed', count };
       renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: 'low-power' });
       renderer.debug.onShaderError = () => { fallback(); };

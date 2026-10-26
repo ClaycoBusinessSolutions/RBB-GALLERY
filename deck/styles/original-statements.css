@@ -6,7 +6,7 @@
 .source-statement__body{font-family:inherit;font-size:35px;line-height:1.43;letter-spacing:-.012em}
 .source-statement__body p{margin:0;white-space:pre-line}
 .source-statement__body p+p{margin-top:28px}
-.source-portrait .source-statement__body{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:66px;margin-top:68px}
+.source-portrait .source-statement__body{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:66px;margin-top:68px}
 .source-portrait .source-statement__body p+p{margin-top:0}
 .source-purpose h2{font-size:76px;line-height:1.13;max-width:1700px}
 .source-purpose .source-statement__body{display:grid;grid-template-columns:1fr 1fr;gap:92px;margin-top:60px;font-size:32px;line-height:1.43}

@@ -4,14 +4,14 @@
  * build/research/osmo/MUSEUM_MENU_README.md. Original logo/content excluded.
  */
 const GROUPS = [
-  { title: 'Invitation', ids: ['invitation-cover', 'living-portrait', 'why-we-build', 'partner-invitation'] },
+  { title: 'Invitation', ids: ['invitation-cover', 'living-portrait', 'why-we-build', 'stats-summary', 'partner-invitation'] },
   { title: 'Seminal projects', ids: ['projects-intro','projects-civic', 'projects-work', 'projects-care', 'projects-industry'] },
   { title: 'Art and collaboration', ids: ['collection-intro', 'office-art', 'collection-artists', 'hope-plaza'] },
   { title: 'Possibilities', ids: ['spaces-intro','opportunities-plan','opportunity-prefunction','opportunity-timeline','possibility'] },
 ];
 const LABELS = {
   'invitation-cover': 'How vision takes form', 'living-portrait': 'A living portrait',
-  'why-we-build': 'Why we build', 'partner-invitation': 'The invitation',
+  'why-we-build': 'Why we build', 'stats-summary': 'The work of generations', 'partner-invitation': 'The invitation',
   'projects-civic': 'Life and community', 'projects-work': 'Work and connection',
   'projects-care': 'Care and discovery', 'projects-industry': 'Making what comes next',
   'hope-plaza': 'A place for hope',
@@ -23,7 +23,7 @@ const LABELS = {
 };
 
 function loadStyles() {
-  const href = new URL('../museum-menu.css?v=e70d4298d8fbed4e85ee', import.meta.url).href;
+  const href = new URL('../museum-menu.css?v=3581e4cf70f3ee9bef84', import.meta.url).href;
   if ([...document.styleSheets].some(sheet => sheet.href === href)) return Promise.resolve();
   let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(item => item.href === href);
   return new Promise(resolve => {

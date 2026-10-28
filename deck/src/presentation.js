@@ -1,16 +1,17 @@
-import { mountArtField } from './art-field.js?v=e70d4298d8fbed4e85ee';
-import { mountProjectField } from './project-field.js?v=e70d4298d8fbed4e85ee';
-import { mountArcTransition } from './arc-transition.js?v=e70d4298d8fbed4e85ee';
-import { mountMuseumMenu } from './museum-menu.js?v=e70d4298d8fbed4e85ee';
-import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=e70d4298d8fbed4e85ee';
-import { createSeminalProjects } from './seminal-projects.js?v=e70d4298d8fbed4e85ee';
-import { isProjectSequence } from './project-sequence.js?v=e70d4298d8fbed4e85ee';
-import { createHopeGallery } from './hope-gallery.js?v=e70d4298d8fbed4e85ee';
-import { createSpaceOpportunities } from './space-opportunities.js?v=e70d4298d8fbed4e85ee';
-import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=e70d4298d8fbed4e85ee';
-import { mountMobileNavContrast } from './mobile-nav-contrast.js?v=e70d4298d8fbed4e85ee';
-import { createClarkLogoMotion } from './clark-logo-motion.js?v=e70d4298d8fbed4e85ee';
-import { createSectionNarrativeMotion } from './section-narrative-motion.js?v=e70d4298d8fbed4e85ee';
+import { mountArtField } from './art-field.js?v=3581e4cf70f3ee9bef84';
+import { mountProjectField } from './project-field.js?v=3581e4cf70f3ee9bef84';
+import { mountArcTransition } from './arc-transition.js?v=3581e4cf70f3ee9bef84';
+import { mountMuseumMenu } from './museum-menu.js?v=3581e4cf70f3ee9bef84';
+import { addSceneReveal, settleSceneReveal, SCENE_MOTION } from './scene-reveal.js?v=3581e4cf70f3ee9bef84';
+import { createSeminalProjects } from './seminal-projects.js?v=3581e4cf70f3ee9bef84';
+import { isProjectSequence } from './project-sequence.js?v=3581e4cf70f3ee9bef84';
+import { createHopeGallery } from './hope-gallery.js?v=3581e4cf70f3ee9bef84';
+import { createSpaceOpportunities } from './space-opportunities.js?v=3581e4cf70f3ee9bef84';
+import { normalizeSceneId, validSceneId as validateSceneId, sceneFromHash as parseSceneHash, initialSceneId, navigationSceneFromMessage } from './mobile-runtime.js?v=3581e4cf70f3ee9bef84';
+import { mountMobileNavContrast } from './mobile-nav-contrast.js?v=3581e4cf70f3ee9bef84';
+import { createClarkLogoMotion } from './clark-logo-motion.js?v=3581e4cf70f3ee9bef84';
+import { createSectionNarrativeMotion } from './section-narrative-motion.js?v=3581e4cf70f3ee9bef84';
+import { mountBehindTheBuildings } from './behind-the-buildings/insert.js?v=3581e4cf70f3ee9bef84';
 
 const $ = selector => document.querySelector(selector);
 const scenes = [...document.querySelectorAll('.scene')];
@@ -46,6 +47,8 @@ const hopeGallery = createHopeGallery();
 const spaceOpportunities = createSpaceOpportunities({ onNavigate: go, onOpen: pauseForOverlay, onClose: refreshMotion });
 const clarkLogoMotions = new Map(scenes.filter(scene => scene.querySelector('.clark-brandmark')).map(scene => [scene, createClarkLogoMotion(scene.querySelector('.clark-brandmark'))]));
 const sectionNarrativeMotion = createSectionNarrativeMotion();
+// Behind the buildings: the statistics slides play any builds before Next leaves them.
+const behindTheBuildings = mountBehindTheBuildings({ motion: () => transitionMotion(), phone: () => phone.matches, onClose: () => { refreshMotion(); stage.focus({ preventScroll: true }); } });
 
 function resize() {
  const root = document.documentElement, width = root.clientWidth, height = root.clientHeight;
@@ -61,7 +64,7 @@ function resize() {
   seminalProjects.activate(scenes[state.index], { motion: transitionMotion() });
  }
 }
-addEventListener('resize', resize); resize();
+addEventListener('resize', () => { resize(); behindTheBuildings.resize(); }); resize();
 
 // Paused, seekable scene timelines support the existing HyperFrames wrapper.
 for (const scene of scenes) {
@@ -93,7 +96,7 @@ function updateChrome() {
   const surfaceColor = surface.backgroundColor;
   nav.style.setProperty('--nav-surface', surfaceColor === 'transparent' || surfaceColor === 'rgba(0, 0, 0, 0)' ? getComputedStyle(stage).backgroundColor : surfaceColor);
   nav.style.setProperty('--nav-ink', surface.color);
-  nav.dataset.theme = current.matches('.source-statement,.invitation-cover,.seminal-projects,.office-art,.collaboration-invitation,.clark-cover,.space-opportunity--night') ? 'dark' : 'light';
+  nav.dataset.theme = current.matches('.source-statement,.invitation-cover,.seminal-projects,.office-art,.collaboration-invitation,.clark-cover,.space-opportunity--night,.stats-scene') ? 'dark' : 'light';
   nav.hidden = menuWanted || menuBusy;
   nav.inert = menuWanted || menuBusy;
  }
@@ -131,7 +134,7 @@ async function prepareScene(scene) {
  await Promise.allSettled([prepareCover(scene), clarkLogoMotions.get(scene)?.ready, hopeGallery.prepare(scene), spaceOpportunities.prepare(scene), seminalProjects.prepare(scene)]);
  if (scene.dataset.compositionId === 'office-art') {
   const generation = fieldGeneration;
-  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=e70d4298d8fbed4e85ee').then(async ({ mountWavyAccordion }) => {
+  if (!officeAccordionPromise) officeAccordionPromise = import('./wavy-accordion.js?v=3581e4cf70f3ee9bef84').then(async ({ mountWavyAccordion }) => {
    if (generation !== fieldGeneration) return null;
    const root = scene.querySelector('[data-wavy-accordion-init]');
    officeAccordion = mountWavyAccordion(root, { onSelect: index => openOfficePhoto(root, index) });
@@ -248,6 +251,7 @@ function snapshotPhoneMarket(scene) {
  return snapshot;
 }
 function stepBy(delta) {
+ if (!state.transitioning && queue === null && behindTheBuildings.step(scenes[state.index], delta)) return Promise.resolve();
  return go((queue ?? (state.transitioning ? navigationTarget : state.index)) + delta);
 }
 async function go(index, { instant = false, seek = false } = {}) {
@@ -266,6 +270,7 @@ async function go(index, { instant = false, seek = false } = {}) {
  const from = scenes[state.index], to = scenes[index], direction = index >= state.index ? 1 : -1;
  stopAmbient(from);
  if (from !== to) {
+  behindTheBuildings.leave(from);
   clarkLogoMotions.get(from)?.leave();
   sectionNarrativeMotion.leave(from);
  }
@@ -292,6 +297,7 @@ async function go(index, { instant = false, seek = false } = {}) {
  if (!useProjectSequence) seminalProjects.settle(to);
  const arc = animate && !useProjectSequence && !phoneProjectStep ? arcs.begin(to, { direction, curve: phoneTransition ? 22 : 12 }) : null;
  to.classList.add('active'); to.inert = false; to.setAttribute('aria-hidden', 'false');
+ behindTheBuildings.enter(to, { direction });
  if (menuPreview && parent !== window) parent.postMessage({ type: 'RBB_PREVIEW_SCENE', scene: to.dataset.compositionId }, location.origin);
  if (phone.matches) to.scrollTop = 0;
  from.inert = true; from.style.pointerEvents = 'none';
@@ -436,6 +442,7 @@ addEventListener('keydown', event => {
   return;
  }
  if (/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName) || event.target.isContentEditable) return;
+ if (behindTheBuildings.key(event, scenes[state.index])) return;
  if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === 'PageDown' || (event.code === 'Space' && !event.target.closest('button,a'))) { event.preventDefault(); stepBy(1); }
  if (event.key === 'ArrowLeft' || event.key === 'ArrowUp' || event.key === 'PageUp') { event.preventDefault(); stepBy(-1); }
  if (event.key === 'Home') { event.preventDefault(); go(0); }

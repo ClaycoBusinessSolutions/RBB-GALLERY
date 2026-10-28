@@ -1,4 +1,4 @@
-import * as THREE from '../vendor/three/build/three.module.js?v=e70d4298d8fbed4e85ee';
+import * as THREE from '../vendor/three/build/three.module.js?v=3581e4cf70f3ee9bef84';
 
 // Quiet scale figures, rather than detailed characters. Two instanced meshes
 // share all geometry and material; the caller supplies the active motion clock.
